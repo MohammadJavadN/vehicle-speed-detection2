@@ -67,4 +67,16 @@ while True:
         id, (x1, y1, x2, y2), speed, cls = vehicles[iframe]
         cv2.rectangle(frame, (int(x1*w), int(y1*h)), (int(x2*w), int(y2*h)), (0, 255, 0), 2)
 
+        # Prepare the text to display
+        label = f'{cls}: {speed}'
+
+        # Define the position for the label
+        label_x = int((x1 + x2) * w / 2) - 10
+        label_y = int((y1 + y2) * h / 2)
+
+        # Draw the text on the frame
+        cv2.putText(frame, label, (label_x, label_y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
+    else:
+        cv2.putText(frame, label, (label_x, label_y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
+
     out.write(frame)
