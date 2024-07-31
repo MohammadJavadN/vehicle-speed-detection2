@@ -1,0 +1,6 @@
+*.ASF
+*.mp4
+venv/
+# .gitignore
+model/
+models/
