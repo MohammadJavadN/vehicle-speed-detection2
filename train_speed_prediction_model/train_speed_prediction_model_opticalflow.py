@@ -1,3 +1,4 @@
+import ast
 import cv2
 import csv
 import json
@@ -27,6 +28,9 @@ def parse_json(json_paths):
         for item in data:
             offset_frame0 = item.get('frame', 0)
             if 'name' in item:
+                cls = item.get('class', 0)
+                # if cls not in [2, 5, 7]:
+                #     continue
                 id = item.get('track_id', 0)
                 if id == 0:
                     continue
@@ -40,7 +44,6 @@ def parse_json(json_paths):
                     continue
 
                 iframe = item.get('frame', 0)
-                cls = item.get('class', 0)
 
                 # Unpack the bounding box coordinates
                 x1 = bbox.get('x1', 0)
@@ -70,7 +73,7 @@ def normalize_points(points, minv=None, maxv=None):
 
 
 def extract_augmented_data(video_paths, vehicles, modelpath='', real_data_coef=50,
-                           verbose=0, max_frames=None,
+                           verbose=0, max_frames=None, fq=3, ff=0,
                            pts_num=50):
     
     # interpreter = Interpreter(model_path=modelpath)
@@ -101,15 +104,17 @@ def extract_augmented_data(video_paths, vehicles, modelpath='', real_data_coef=5
         print(video_path)
         cap = cv2.VideoCapture(video_path)
         if not max_frames:
-            max_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+            max_frames = 999999999
 
         prev_gray = None
         prev_pts = None
 
+        frames = [None for _ in range(fq)]
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         while (frame_num < max_frames):
             ret, frame = cap.read()
+            frames[frame_num % fq] = frame
             if not ret:
                 break
             frame_num += 1
@@ -127,19 +132,46 @@ def extract_augmented_data(video_paths, vehicles, modelpath='', real_data_coef=5
             # interpreter.set_tensor(input_details[0]['index'], input_data)
             # interpreter.invoke()
 
+            # ...
+
+            # output = interpreter.get_tensor(output_details[0]['index'])
+            # output = output[0]
+            # output = output.T
+
+            # Get coordinates of bounding box, first 4 columns of output tensor
+            # boxes_xywh, scores = output[..., :4], output[..., 4]
+
+            # # Threshold Setting
+            # threshold = 0.09
+
+            if frame_num < fq:
+                continue
+
+            if (frame_num - fq + 1) in vehicles:
+                prev_pts = []
+                id, (x1, y1, x2, y2), speed, cls = vehicles[frame_num - fq + 1]
+                x1, y1, x2, y2 = x1 * w, y1 * h, x2 * w, y2 * h
+            else:
+                continue
+
+            for _ in range(pts_num):
+                x = np.random.randint(x1, x2)
+                y = np.random.randint(y1, y2)
+                prev_pts.append([x, y])
+
             # Convert the frame to grayscale for optflow calculation
-            frame_gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+            prev_gray = cv2.cvtColor(
+                frames[(frame_num - fq) % fq], cv2.COLOR_BGR2GRAY)
+            # prev_gray = frame_gray.copy()
 
-            if (frame_num-1) in vehicles and prev_pts:
-                prev_pts = np.array(prev_pts).astype(np.float32)
-                prev_pts = np.float32(prev_pts)
-                prev_pts = np.expand_dims(prev_pts, axis=1)
+            prev_pts = np.array(prev_pts).astype(np.float32)
+            prev_pts = np.float32(prev_pts)
+            prev_pts = np.expand_dims(prev_pts, axis=1)
 
-                # # Calculate optical flow using Lucas-Kanade method
-                # next_pts, _, _ = cv2.calcOpticalFlowPyrLK(
-                #     prev_gray, frame_gray,
-                #     prev_pts, None, **lk_params
-                # )
+            distances = [np.abs(x2-x1), np.abs(y2-y1)]
+            for i in range(ff, fq - 1):
+                frame_gray = cv2.cvtColor(
+                    frames[(frame_num - fq + i + 1) % fq], cv2.COLOR_BGR2GRAY)
 
                 # Calculate optical flow using Lucas-Kanade method
                 next_pts, status, errors = cv2.calcOpticalFlowPyrLK(
@@ -161,102 +193,35 @@ def extract_augmented_data(video_paths, vehicles, modelpath='', real_data_coef=5
                     best_next_pts = next_pts[top_20_indices]
                     # best_errors = errors_flat[top_20_indices]
 
-
                     # Normalize points assuming the image size is known
-                    # img_size = (prev_gray.shape[1], prev_gray.shape[0])
-                    prev_pts_normalized, minv, maxv = normalize_points(best_prev_pts)
-                    next_pts_normalized, _, _ = normalize_points(best_next_pts, minv, maxv)
+                    prev_pts_n, minv, maxv = normalize_points(best_prev_pts)
+                    next_pts_n, _, _ = normalize_points(best_next_pts, minv, maxv)
 
-
-                    # Calculate Euclidean distances between corresponding points
-                    distances = np.array([
-                        np.sqrt(np.sum((prev_pts_normalized[i] - next_pts_normalized[i]) ** 2))
+                    # Calculate Euclidean distances
+                    distances.extend([
+                        np.sqrt(np.sum((prev_pts_n[i] - next_pts_n[i]) ** 2))
                         for i in range(len(best_prev_pts))
                     ])
 
-                    X.append(distances)
-                    # print(list(distances))
-                    # print('----------------------------------------')
-                    # print(distances)
-                    # print('\n')
-                    Y.append(speed)
-                # for (new, old) in zip(best_next_pts, prev_pts):
-                #     a, b = new.ravel().astype(int)
-                #     c, d = old.ravel().astype(int)
-                #     pixel_speed = ((a-c)**2 + (b-d)**2)**0.5
-
-                    # # ((x, y, w, h), real_speed, lane) = vehicles[frame_num]
-                    # for _ in range(real_data_coef):
-                    #     X.append((x, y, pixel_speed))
-                    #     Y.append(speed)
-
-            # output = interpreter.get_tensor(output_details[0]['index'])
-            # output = output[0]
-            # output = output.T
-
-            # Get coordinates of bounding box, first 4 columns of output tensor
-            # boxes_xywh, scores = output[..., :4], output[..., 4]
-
-            # # Threshold Setting
-            # threshold = 0.09
-
-            prev_pts = []
-            # cars = {}
-            # for box, score in zip(boxes_xywh, scores):
-            #     if score >= threshold:
-            #         x_center, y_center, w, h = box
-            #         if w < 100/imH and h < 100/imW:
-            #             # calculate average box for each car
-            #             car_id = get_id(x_center*imW, y_center*imH)
-            #             sum_box, cnt = cars.get(car_id, (((0, 0, 0, 0), 0)))
-            #             cars[car_id] = (sum_box + box, cnt+1)
-
-            if frame_num in vehicles:
-                id, (x1, y1, x2, y2), speed, cls = vehicles[frame_num]
-                x1, y1, x2, y2 = x1 * w, y1 * h, x2 * w, y2 * h
-            else:
-                continue
-
-            for _ in range(pts_num):
-                x = np.random.randint(x1, x2)
-                y = np.random.randint(y1, y2)
-                prev_pts.append([x, y])
-
-            # for box, cnt in cars.values():
-            #     x_center, y_center, w, h = box / cnt
-            #     prev_pts.append([x_center * imW, y_center * imH])
-
-            prev_gray = frame_gray.copy()
+            X.append(distances)
+            Y.append(speed)
 
         cap.release()
-
-    # # Agumenting with 0 speeds
-    # for _ in range(200):
-    #     X.append(
-    #         (
-    #             np.random.randint(w),
-    #             np.random.randint(h),
-    #             0,
-    #         )
-    #     )
-    #     Y.append(0)
 
     return X, Y
 
 
 def save_data_in_file(X, Y, path='data/data.csv'):
     # Define field names (column headers)
-    field_names = ['x', 'y', 'pixel_speed', 'real_speed']
+    field_names = ['X', 'speed']
 
     # Create a list of dictionaries (rows)
     rows = []
-    for i, (x, y, ps) in enumerate(X):
+    for i in range(len(X)):
         rows.append(
             {
-                'x': x,
-                'y': y,
-                'pixel_speed': ps,
-                'real_speed': Y[i],
+                'X': X[i],
+                'speed': Y[i],
             }
         )
 
@@ -269,10 +234,24 @@ def save_data_in_file(X, Y, path='data/data.csv'):
     print(f"CSV file {path} created successfully!")
 
 
+def load_data_from_file(path='data/data.csv'):
+    X, Y = [], []
+
+    # Read data from CSV file
+    with open(path, 'r', newline='') as csvfile:
+        reader = csv.DictReader(csvfile)
+        for row in reader:
+            # Use ast.literal_eval to safely parse string representations of lists
+            X.append(ast.literal_eval(row['X']))
+            Y.append(ast.literal_eval(row['speed']))
+
+    return X, Y
+
+
 def train(X, y):
     # Split the data into training and testing sets
     X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.1, random_state=42
+        X, y, test_size=0.15, random_state=42
     )
 
     print(len(X_train), len(X_test))
@@ -281,14 +260,17 @@ def train(X, y):
     X_train_scaled = scaler.fit_transform(X_train)
     X_test_scaled = scaler.transform(X_test)
 
-
     # Define the neural network model
-    model = Sequential([
-        Dense(1024, input_shape=(len(X_train[0]),), activation='relu'),
-        Dense(1024, activation='relu'),
-        # Dense(128, activation='relu'),
+    layers = [
+        Dense(512, input_shape=(len(X_train[0]),), activation='relu'),
+        Dense(512, activation='relu'),
+        # Dense(32, activation='relu'),
         Dense(1)  # Output layer
-    ])
+    ]
+    model = Sequential(layers)
+
+    # for layer in layers:
+    #     print(layer)
 
     # Compile the model
     model.compile(optimizer='adam', loss='mean_squared_error')
@@ -308,6 +290,7 @@ def train(X, y):
 
     precision = 0
     for i, p in enumerate(predictions):
+        # print(y_test[i], p)
         precision += (1 - (abs(y_test[i] - p)/p))
 
     print('precision=', precision/len(predictions))
@@ -327,12 +310,13 @@ def save_model(model, model_path):
 
 # Main function
 def main():
+    regen = False
     video_paths = [
-        # 'FILE0002.ASF',
+        'FILE0002.ASF',
         # 'FILE0005.ASF',
-        # 'FILE0010.ASF',
+        'FILE0010.ASF',
         'FILE0019.ASF',
-        # 'FILE0031.ASF',
+        'FILE0031.ASF',
     ]
     json_paths = [vp.replace('ASF', 'json') for vp in video_paths]
 
@@ -341,17 +325,27 @@ def main():
     vehicles = parse_json(json_paths)
     print('json file was parsed successfully!\n')
 
-    X, y = extract_augmented_data(
-        video_paths=video_paths,
-        vehicles=vehicles,
-        # modelpath=license_plate_detector_model_path,
-        # max_frames=5000,
-        verbose=1,
-    )
+    if regen:
+        fq = 6
+        ff = 4
 
-    print('\naugmented data extracted successfully!')
+        print(f'fq={fq}, ff={ff}')
+        X, y = extract_augmented_data(
+            video_paths=video_paths,
+            vehicles=vehicles,
+            # modelpath=license_plate_detector_model_path,
+            # max_frames=5000,
+            fq=fq,
+            ff=ff, # number of frame involved: fq - ff - 1
+            verbose=1,
+        )
 
-    # save_data_in_file(X, y)
+        print('\naugmented data extracted successfully!')
+
+        save_data_in_file(X, y)
+    else:
+        X, y = load_data_from_file()
+        print('\naugmented data loaded successfully!')
 
     print('\ntraining model started...')
 
