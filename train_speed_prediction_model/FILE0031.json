@@ -5067,7 +5067,7 @@
     },
     {
         "frame": 454,
-        "velocity": 7,
+        "velocity": null,
         "name": "airplane",
         "class": 4,
         "confidence": 0.25792,
@@ -8275,7 +8275,7 @@
     },
     {
         "frame": 777,
-        "velocity": 472,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.39776,
@@ -13024,7 +13024,7 @@
     },
     {
         "frame": 1146,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.46224,
@@ -13290,7 +13290,7 @@
     },
     {
         "frame": 1165,
-        "velocity": 1,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.55798,
@@ -16658,7 +16658,7 @@
     },
     {
         "frame": 1439,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.58379,
@@ -16672,7 +16672,7 @@
     },
     {
         "frame": 1440,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.56885,
@@ -16714,7 +16714,7 @@
     },
     {
         "frame": 1443,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.68241,
@@ -17372,7 +17372,7 @@
     },
     {
         "frame": 1490,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.62479,
@@ -17386,7 +17386,7 @@
     },
     {
         "frame": 1491,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.31435,
@@ -17400,7 +17400,7 @@
     },
     {
         "frame": 1492,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.49592,
@@ -17442,7 +17442,7 @@
     },
     {
         "frame": 1495,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.2206,
@@ -17456,7 +17456,7 @@
     },
     {
         "frame": 1496,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.43476,
@@ -17582,7 +17582,7 @@
     },
     {
         "frame": 1505,
-        "velocity": 1,
+        "velocity": null,
         "name": "airplane",
         "class": 4,
         "confidence": 0.37947,
@@ -17694,7 +17694,7 @@
     },
     {
         "frame": 1513,
-        "velocity": 1,
+        "velocity": null,
         "name": "airplane",
         "class": 4,
         "confidence": 0.55498,
@@ -18100,7 +18100,7 @@
     },
     {
         "frame": 1542,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.15017,
@@ -18114,7 +18114,7 @@
     },
     {
         "frame": 1543,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.1228,
@@ -18128,7 +18128,7 @@
     },
     {
         "frame": 1544,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.12772,
@@ -18478,7 +18478,7 @@
     },
     {
         "frame": 1594,
-        "velocity": 7,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.29578,
@@ -18492,7 +18492,7 @@
     },
     {
         "frame": 1595,
-        "velocity": 7,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.24966,
@@ -19974,7 +19974,7 @@
     },
     {
         "frame": 1708,
-        "velocity": 6,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.24862,
@@ -20282,7 +20282,7 @@
     },
     {
         "frame": 1730,
-        "velocity": 5,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.34744,
@@ -22647,7 +22647,7 @@
     },
     {
         "frame": 1939,
-        "velocity": 2,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.32993,
@@ -22759,7 +22759,7 @@
     },
     {
         "frame": 1947,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.6412,
@@ -22787,7 +22787,7 @@
     },
     {
         "frame": 1949,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.59383,
@@ -22801,7 +22801,7 @@
     },
     {
         "frame": 1950,
-        "velocity": 2,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.66247,
@@ -22815,7 +22815,7 @@
     },
     {
         "frame": 1951,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.70552,
@@ -22829,7 +22829,7 @@
     },
     {
         "frame": 1952,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.62457,
@@ -22843,7 +22843,7 @@
     },
     {
         "frame": 1953,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.54567,
@@ -22857,7 +22857,7 @@
     },
     {
         "frame": 1954,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.68667,
@@ -22885,7 +22885,7 @@
     },
     {
         "frame": 1956,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.40527,
@@ -23123,7 +23123,7 @@
     },
     {
         "frame": 1973,
-        "velocity": 1,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.33933,
@@ -23361,7 +23361,7 @@
     },
     {
         "frame": 1990,
-        "velocity": 0,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.21793,
@@ -23571,7 +23571,7 @@
     },
     {
         "frame": 2005,
-        "velocity": 5,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.24515,
@@ -24322,7 +24322,7 @@
     },
     {
         "frame": 2076,
-        "velocity": 455,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.84725,
@@ -24350,7 +24350,7 @@
     },
     {
         "frame": 2078,
-        "velocity": 5,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.52318,
@@ -24924,7 +24924,7 @@
     },
     {
         "frame": 2119,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.53485,
@@ -24938,7 +24938,7 @@
     },
     {
         "frame": 2120,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.47904,
@@ -24952,7 +24952,7 @@
     },
     {
         "frame": 2121,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.38115,
@@ -24966,7 +24966,7 @@
     },
     {
         "frame": 2122,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.41415,
@@ -24980,7 +24980,7 @@
     },
     {
         "frame": 2123,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.42099,
@@ -24994,7 +24994,7 @@
     },
     {
         "frame": 2124,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.54905,
@@ -25246,7 +25246,7 @@
     },
     {
         "frame": 2142,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.4603,
@@ -25260,7 +25260,7 @@
     },
     {
         "frame": 2143,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.12243,
@@ -25274,7 +25274,7 @@
     },
     {
         "frame": 2144,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.22804,
@@ -25288,7 +25288,7 @@
     },
     {
         "frame": 2145,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.14865,
@@ -25302,7 +25302,7 @@
     },
     {
         "frame": 2146,
-        "velocity": 4,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.3064,
@@ -25316,7 +25316,7 @@
     },
     {
         "frame": 2147,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.25639,
@@ -25330,7 +25330,7 @@
     },
     {
         "frame": 2148,
-        "velocity": 4,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.23279,
@@ -25344,7 +25344,7 @@
     },
     {
         "frame": 2149,
-        "velocity": 4,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.1043,
@@ -25372,7 +25372,7 @@
     },
     {
         "frame": 2151,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.25968,
@@ -25386,7 +25386,7 @@
     },
     {
         "frame": 2152,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.21687,
@@ -25400,7 +25400,7 @@
     },
     {
         "frame": 2153,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.26898,
@@ -25456,7 +25456,7 @@
     },
     {
         "frame": 2157,
-        "velocity": 2,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.30873,
@@ -25484,7 +25484,7 @@
     },
     {
         "frame": 2159,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.55891,
@@ -25526,7 +25526,7 @@
     },
     {
         "frame": 2162,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.37873,
@@ -25540,7 +25540,7 @@
     },
     {
         "frame": 2163,
-        "velocity": 4,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.26974,
@@ -25554,7 +25554,7 @@
     },
     {
         "frame": 2164,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.58872,
@@ -25596,7 +25596,7 @@
     },
     {
         "frame": 2167,
-        "velocity": 2,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.55194,
@@ -25624,7 +25624,7 @@
     },
     {
         "frame": 2169,
-        "velocity": 4,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.43294,
@@ -25638,7 +25638,7 @@
     },
     {
         "frame": 2170,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.35284,
@@ -25652,7 +25652,7 @@
     },
     {
         "frame": 2171,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.36988,
@@ -25666,7 +25666,7 @@
     },
     {
         "frame": 2172,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.55158,
@@ -25694,7 +25694,7 @@
     },
     {
         "frame": 2174,
-        "velocity": 2,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.42866,
@@ -25708,7 +25708,7 @@
     },
     {
         "frame": 2175,
-        "velocity": 2,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.32363,
@@ -25722,7 +25722,7 @@
     },
     {
         "frame": 2176,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.14458,
@@ -25806,7 +25806,7 @@
     },
     {
         "frame": 2182,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.1421,
@@ -25848,7 +25848,7 @@
     },
     {
         "frame": 2185,
-        "velocity": 2,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.17274,
@@ -25932,7 +25932,7 @@
     },
     {
         "frame": 2191,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.17164,
@@ -25946,7 +25946,7 @@
     },
     {
         "frame": 2192,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.23221,
@@ -27229,7 +27229,7 @@
     },
     {
         "frame": 2355,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.13479,
@@ -27826,7 +27826,7 @@
     },
     {
         "frame": 2465,
-        "velocity": 6,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.12835,
@@ -28050,7 +28050,7 @@
     },
     {
         "frame": 2481,
-        "velocity": 0,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.3102,
@@ -30877,7 +30877,7 @@
     },
     {
         "frame": 2697,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.32239,
@@ -34007,7 +34007,7 @@
     },
     {
         "frame": 2973,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.34874,
@@ -34021,7 +34021,7 @@
     },
     {
         "frame": 2974,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.40129,
@@ -34035,7 +34035,7 @@
     },
     {
         "frame": 2975,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.25314,
@@ -34049,7 +34049,7 @@
     },
     {
         "frame": 2976,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.18024,
@@ -34063,7 +34063,7 @@
     },
     {
         "frame": 2977,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.28693,
@@ -34091,7 +34091,7 @@
     },
     {
         "frame": 2979,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.36847,
@@ -34105,7 +34105,7 @@
     },
     {
         "frame": 2980,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.40355,
@@ -34119,7 +34119,7 @@
     },
     {
         "frame": 2981,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.19746,
@@ -34133,7 +34133,7 @@
     },
     {
         "frame": 2982,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.27276,
@@ -34147,7 +34147,7 @@
     },
     {
         "frame": 2983,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.14355,
@@ -34161,7 +34161,7 @@
     },
     {
         "frame": 2984,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.26563,
@@ -34189,7 +34189,7 @@
     },
     {
         "frame": 2986,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.29482,
@@ -34203,7 +34203,7 @@
     },
     {
         "frame": 2987,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.47984,
@@ -34231,7 +34231,7 @@
     },
     {
         "frame": 2989,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.44885,
@@ -34245,7 +34245,7 @@
     },
     {
         "frame": 2990,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.59122,
@@ -34259,7 +34259,7 @@
     },
     {
         "frame": 2991,
-        "velocity": 4,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.19476,
@@ -34273,7 +34273,7 @@
     },
     {
         "frame": 2992,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.68105,
@@ -34287,7 +34287,7 @@
     },
     {
         "frame": 2993,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.50992,
@@ -34301,7 +34301,7 @@
     },
     {
         "frame": 2994,
-        "velocity": 4,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.2451,
@@ -34315,7 +34315,7 @@
     },
     {
         "frame": 2995,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.1749,
@@ -34329,7 +34329,7 @@
     },
     {
         "frame": 2996,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.34733,
@@ -34357,7 +34357,7 @@
     },
     {
         "frame": 2998,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.28765,
@@ -34371,7 +34371,7 @@
     },
     {
         "frame": 2999,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.50366,
@@ -34399,7 +34399,7 @@
     },
     {
         "frame": 3001,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.53778,
@@ -34413,7 +34413,7 @@
     },
     {
         "frame": 3002,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.31576,
@@ -34427,7 +34427,7 @@
     },
     {
         "frame": 3003,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.31564,
@@ -34441,7 +34441,7 @@
     },
     {
         "frame": 3004,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.47093,
@@ -34455,7 +34455,7 @@
     },
     {
         "frame": 3005,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.43855,
@@ -34469,7 +34469,7 @@
     },
     {
         "frame": 3006,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.23671,
@@ -34483,7 +34483,7 @@
     },
     {
         "frame": 3007,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.33749,
@@ -34511,7 +34511,7 @@
     },
     {
         "frame": 3009,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.33208,
@@ -34525,7 +34525,7 @@
     },
     {
         "frame": 3010,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.31111,
@@ -34539,7 +34539,7 @@
     },
     {
         "frame": 3011,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.35251,
@@ -34553,7 +34553,7 @@
     },
     {
         "frame": 3012,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.44428,
@@ -34567,7 +34567,7 @@
     },
     {
         "frame": 3013,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.44264,
@@ -34581,7 +34581,7 @@
     },
     {
         "frame": 3014,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.24815,
@@ -34595,7 +34595,7 @@
     },
     {
         "frame": 3015,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.18309,
@@ -34609,7 +34609,7 @@
     },
     {
         "frame": 3016,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.22747,
@@ -34623,7 +34623,7 @@
     },
     {
         "frame": 3017,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.23241,
@@ -34637,7 +34637,7 @@
     },
     {
         "frame": 3018,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.4617,
@@ -34651,7 +34651,7 @@
     },
     {
         "frame": 3019,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.27665,
@@ -34665,7 +34665,7 @@
     },
     {
         "frame": 3020,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.28083,
@@ -34679,7 +34679,7 @@
     },
     {
         "frame": 3021,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.14313,
@@ -34693,7 +34693,7 @@
     },
     {
         "frame": 3022,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.55147,
@@ -34707,7 +34707,7 @@
     },
     {
         "frame": 3023,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.26844,
@@ -38791,7 +38791,7 @@
     },
     {
         "frame": 3387,
-        "velocity": 4,
+        "velocity": null,
         "name": "airplane",
         "class": 4,
         "confidence": 0.36772,
@@ -38819,7 +38819,7 @@
     },
     {
         "frame": 3389,
-        "velocity": 772,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.17723,
@@ -40583,7 +40583,7 @@
     },
     {
         "frame": 3515,
-        "velocity": 4,
+        "velocity": null,
         "name": "airplane",
         "class": 4,
         "confidence": 0.32897,
@@ -40639,7 +40639,7 @@
     },
     {
         "frame": 3519,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.11246,
@@ -43109,7 +43109,7 @@
     },
     {
         "frame": 3777,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.39148,
@@ -43123,7 +43123,7 @@
     },
     {
         "frame": 3778,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.13286,
@@ -43193,7 +43193,7 @@
     },
     {
         "frame": 3783,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.57912,
@@ -43249,7 +43249,7 @@
     },
     {
         "frame": 3787,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.66711,
@@ -43263,7 +43263,7 @@
     },
     {
         "frame": 3788,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.70871,
@@ -43277,7 +43277,7 @@
     },
     {
         "frame": 3789,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.24125,
@@ -43291,7 +43291,7 @@
     },
     {
         "frame": 3790,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.31131,
@@ -43361,7 +43361,7 @@
     },
     {
         "frame": 3795,
-        "velocity": 1,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.64761,
@@ -43389,7 +43389,7 @@
     },
     {
         "frame": 3797,
-        "velocity": 1,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.5785,
@@ -43977,7 +43977,7 @@
     },
     {
         "frame": 3839,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.20894,
@@ -47571,7 +47571,7 @@
     },
     {
         "frame": 4195,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.53568,
@@ -47585,7 +47585,7 @@
     },
     {
         "frame": 4196,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.52598,
@@ -49830,7 +49830,7 @@
     },
     {
         "frame": 4373,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.46719,
@@ -49872,7 +49872,7 @@
     },
     {
         "frame": 4376,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.36552,
@@ -53249,7 +53249,7 @@
     },
     {
         "frame": 4675,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.13149,
@@ -53610,7 +53610,7 @@
     },
     {
         "frame": 4701,
-        "velocity": 772,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.15859,
@@ -53624,7 +53624,7 @@
     },
     {
         "frame": 4702,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.33435,
@@ -53638,7 +53638,7 @@
     },
     {
         "frame": 4703,
-        "velocity": 772,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.52088,
@@ -53652,7 +53652,7 @@
     },
     {
         "frame": 4704,
-        "velocity": 772,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.32501,
@@ -53666,7 +53666,7 @@
     },
     {
         "frame": 4705,
-        "velocity": 772,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.3251,
@@ -53834,7 +53834,7 @@
     },
     {
         "frame": 4717,
-        "velocity": 7,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.22395,
@@ -54744,7 +54744,7 @@
     },
     {
         "frame": 4782,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.60862,
@@ -54786,7 +54786,7 @@
     },
     {
         "frame": 4785,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.49988,
@@ -54814,7 +54814,7 @@
     },
     {
         "frame": 4787,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.5165,
@@ -54828,7 +54828,7 @@
     },
     {
         "frame": 4788,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.51197,
@@ -54842,7 +54842,7 @@
     },
     {
         "frame": 4789,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.44096,
@@ -54884,7 +54884,7 @@
     },
     {
         "frame": 4792,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.374,
@@ -54940,7 +54940,7 @@
     },
     {
         "frame": 4796,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.67891,
@@ -54996,7 +54996,7 @@
     },
     {
         "frame": 4800,
-        "velocity": 1,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.44589,
@@ -55164,7 +55164,7 @@
     },
     {
         "frame": 4812,
-        "velocity": 4,
+        "velocity": null,
         "name": "truck",
         "class": 7,
         "confidence": 0.46895,
@@ -55192,7 +55192,7 @@
     },
     {
         "frame": 4814,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.55464,
@@ -55262,7 +55262,7 @@
     },
     {
         "frame": 4819,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.3907,
@@ -55304,7 +55304,7 @@
     },
     {
         "frame": 4822,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.50167,
@@ -55346,7 +55346,7 @@
     },
     {
         "frame": 4825,
-        "velocity": 2,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.21822,
@@ -57907,7 +57907,7 @@
     },
     {
         "frame": 5129,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.82304,
@@ -58103,7 +58103,7 @@
     },
     {
         "frame": 5143,
-        "velocity": 8,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.58583,
@@ -58579,7 +58579,7 @@
     },
     {
         "frame": 5177,
-        "velocity": 1,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.55872,
@@ -62350,7 +62350,7 @@
     },
     {
         "frame": 5486,
-        "velocity": 4,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.3193,
@@ -62364,7 +62364,7 @@
     },
     {
         "frame": 5487,
-        "velocity": 4,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.436,
@@ -62420,7 +62420,7 @@
     },
     {
         "frame": 5491,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.13353,
@@ -62434,7 +62434,7 @@
     },
     {
         "frame": 5492,
-        "velocity": 4,
+        "velocity": null,
         "name": "boat",
         "class": 8,
         "confidence": 0.14009,
@@ -62448,7 +62448,7 @@
     },
     {
         "frame": 5493,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.2119,
@@ -62462,7 +62462,7 @@
     },
     {
         "frame": 5494,
-        "velocity": 2,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.15625,
@@ -62476,7 +62476,7 @@
     },
     {
         "frame": 5495,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.32618,
@@ -62490,7 +62490,7 @@
     },
     {
         "frame": 5496,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.24019,
@@ -62504,7 +62504,7 @@
     },
     {
         "frame": 5497,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.52495,
@@ -62518,7 +62518,7 @@
     },
     {
         "frame": 5498,
-        "velocity": 2,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.53613,
@@ -62532,7 +62532,7 @@
     },
     {
         "frame": 5499,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.55508,
@@ -62546,7 +62546,7 @@
     },
     {
         "frame": 5500,
-        "velocity": 4,
+        "velocity": null,
         "name": "train",
         "class": 6,
         "confidence": 0.25193,
@@ -62560,7 +62560,7 @@
     },
     {
         "frame": 5501,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.44225,
@@ -62574,7 +62574,7 @@
     },
     {
         "frame": 5502,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.35733,
@@ -62588,7 +62588,7 @@
     },
     {
         "frame": 5503,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.42077,
@@ -62616,7 +62616,7 @@
     },
     {
         "frame": 5505,
-        "velocity": 2,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.13282,
@@ -62630,7 +62630,7 @@
     },
     {
         "frame": 5506,
-        "velocity": 4,
+        "velocity": null,
         "name": "airplane",
         "class": 4,
         "confidence": 0.41181,
@@ -62686,7 +62686,7 @@
     },
     {
         "frame": 5510,
-        "velocity": 4,
+        "velocity": null,
         "name": "airplane",
         "class": 4,
         "confidence": 0.35673,
@@ -62700,7 +62700,7 @@
     },
     {
         "frame": 5511,
-        "velocity": 4,
+        "velocity": null,
         "name": "airplane",
         "class": 4,
         "confidence": 0.26002,
@@ -62714,7 +62714,7 @@
     },
     {
         "frame": 5512,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.26886,
@@ -62728,7 +62728,7 @@
     },
     {
         "frame": 5513,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.25504,
@@ -62742,7 +62742,7 @@
     },
     {
         "frame": 5514,
-        "velocity": 4,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.19417,
@@ -62952,7 +62952,7 @@
     },
     {
         "frame": 5529,
-        "velocity": 1,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.28341,

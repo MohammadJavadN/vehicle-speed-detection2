@@ -17737,7 +17737,7 @@
     },
     {
         "frame": 1970,
-        "velocity": 687,
+        "velocity": null,
         "name": "car",
         "class": 2,
         "confidence": 0.80988,
@@ -38297,7 +38297,7 @@
     },
     {
         "frame": 3711,
-        "velocity": 738,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.34704,
@@ -49369,7 +49369,7 @@
     },
     {
         "frame": 4585,
-        "velocity": 683,
+        "velocity": null,
         "name": "bus",
         "class": 5,
         "confidence": 0.36229,
