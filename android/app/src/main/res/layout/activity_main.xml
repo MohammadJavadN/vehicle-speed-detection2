@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".MainActivity">
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="40dp"
+        android:text="@string/title"
+        android:id="@+id/title"
+        android:textSize="30sp"
+        android:textAlignment="center"
+        android:layout_margin="20dp"
+        />
+
+<!--    <SurfaceView-->
+<!--        android:id="@+id/surfaceView"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_below="@+id/browseBtn"-->
+<!--        android:layout_centerHorizontal="true"-->
+<!--        android:layout_margin="20dp"-->
+<!--        android:onClick="browseVideo"-->
+<!--        />-->
+
+    <com.google.mlkit.vision.GraphicOverlay
+        android:id="@+id/overlayView"
+        android:layout_width="288dp"
+        android:layout_height="516dp"
+        android:layout_below="@+id/browseBtn"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="60dp"
+        android:scaleType="fitXY" />
+
+    <Button
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/browse"
+        android:layout_below="@id/title"
+        android:id="@+id/browseBtn"
+        android:layout_marginTop="10dp"
+        android:layout_centerHorizontal="true"
+        android:onClick="browseVideo"/>
+
+    <Switch
+        android:id="@+id/plateSw"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/title"
+        android:layout_marginTop="10dp"
+        android:text="@string/plate_detection_txt"
+        android:layout_marginStart="10dp"
+        tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+    <Switch
+        android:id="@+id/saveSw"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/plateSw"
+        android:layout_marginTop="1dp"
+        android:layout_marginRight="10dp"
+        android:text="@string/save_output_txt"
+        android:layout_marginLeft="10dp"
+        tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+    <Switch
+        android:id="@+id/sideViewSw"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_toEndOf="@id/browseBtn"
+        android:layout_below="@id/title"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="10dp"
+        android:text="sideView"
+        android:layout_marginLeft="10dp"
+        tools:ignore="UseSwitchCompatOrMaterialXml" />
+</RelativeLayout>
