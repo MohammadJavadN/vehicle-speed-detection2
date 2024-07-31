@@ -52,7 +52,9 @@ def parse_json(json_paths):
                 y2 = bbox.get('y2', 0)
 
                 # Store the extracted data in the vehicles dictionary
-                vehicles[iframe + offset_frame] = (id, (x1, y1, x2, y2), speed, cls)
+                vehicles[iframe + offset_frame] = (
+                    id, (x1, y1, x2, y2), speed, cls
+                )
                 # print(str(iframe) + ' + ' + str(offset_frame))
 
     return vehicles
@@ -72,10 +74,16 @@ def normalize_points(points, minv=None, maxv=None):
     return norm_points, min_val, max_val
 
 
-def extract_augmented_data(video_paths, vehicles, modelpath='', real_data_coef=50,
-                           verbose=0, max_frames=None, fq=3, ff=0,
-                           pts_num=50):
-    
+def extract_augmented_data(
+    video_paths,
+    vehicles,
+    modelpath='',
+    max_frames=None,
+    fq=3,
+    ff=0,
+    pts_num=50,
+):
+
     # interpreter = Interpreter(model_path=modelpath)
     # interpreter.allocate_tensors()
     # input_details = interpreter.get_input_details()
@@ -118,31 +126,6 @@ def extract_augmented_data(video_paths, vehicles, modelpath='', real_data_coef=5
             if not ret:
                 break
             frame_num += 1
-            # image_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-            # imH, imW, _ = frame.shape
-            # image_resized = cv2.resize(image_rgb, (width, height))
-            # input_data = np.expand_dims(image_resized, axis=0)
-
-            # # Normalize pixel values if using a floating model
-            # # (i.e. if model is non-quantized)
-            # if float_input:
-            #     input_data = (np.float32(input_data) - input_mean) / input_std
-
-            # # Perform the detection by running the model with the frame as input
-            # interpreter.set_tensor(input_details[0]['index'], input_data)
-            # interpreter.invoke()
-
-            # ...
-
-            # output = interpreter.get_tensor(output_details[0]['index'])
-            # output = output[0]
-            # output = output.T
-
-            # Get coordinates of bounding box, first 4 columns of output tensor
-            # boxes_xywh, scores = output[..., :4], output[..., 4]
-
-            # # Threshold Setting
-            # threshold = 0.09
 
             if frame_num < fq:
                 continue
@@ -181,9 +164,9 @@ def extract_augmented_data(video_paths, vehicles, modelpath='', real_data_coef=5
 
                 # Check if errors is not None and has the right shape
                 if errors is not None and errors.size > 0:
-                    # Flatten errors and sort them to get indices of the best points
+                    # get indices of the best points
                     errors_flat = errors.flatten()
-                    sorted_indices = np.argsort(errors_flat)  # Indices of sorted errors
+                    sorted_indices = np.argsort(errors_flat)
 
                     # Get indices of top 20 best points
                     top_20_indices = sorted_indices[:20]
@@ -195,7 +178,9 @@ def extract_augmented_data(video_paths, vehicles, modelpath='', real_data_coef=5
 
                     # Normalize points assuming the image size is known
                     prev_pts_n, minv, maxv = normalize_points(best_prev_pts)
-                    next_pts_n, _, _ = normalize_points(best_next_pts, minv, maxv)
+                    next_pts_n, _, _ = normalize_points(
+                        best_next_pts, minv, maxv
+                    )
 
                     # Calculate Euclidean distances
                     distances.extend([
@@ -211,7 +196,7 @@ def extract_augmented_data(video_paths, vehicles, modelpath='', real_data_coef=5
     return X, Y
 
 
-def save_data_in_file(X, Y, path='data/data.csv'):
+def save_features_in_file(X, Y, path='data/data.csv'):
     # Define field names (column headers)
     field_names = ['X', 'speed']
 
@@ -234,7 +219,7 @@ def save_data_in_file(X, Y, path='data/data.csv'):
     print(f"CSV file {path} created successfully!")
 
 
-def load_data_from_file(path='data/data.csv'):
+def load_features_from_file(path='data/data.csv'):
     X, Y = [], []
 
     # Read data from CSV file
@@ -299,8 +284,8 @@ def train(X, y):
 
 
 def save_model(model, model_path):
-    model.export("model/pb_model", "tf_saved_model")
-    converter = tf.lite.TFLiteConverter.from_saved_model("model/pb_model")
+    model.export("pb_model", "tf_saved_model")
+    converter = tf.lite.TFLiteConverter.from_saved_model("pb_model")
     tflite_model = converter.convert()
     with open(model_path, "wb") as f:
         f.write(tflite_model)
@@ -311,16 +296,21 @@ def save_model(model, model_path):
 # Main function
 def main():
     regen = False
-    video_paths = [
+    videos = [
         'FILE0002.ASF',
         # 'FILE0005.ASF',
         'FILE0010.ASF',
         'FILE0019.ASF',
         'FILE0031.ASF',
     ]
+    videos_path = '../../videos/'
+    video_paths = [videos_path + v for v in videos]
     json_paths = [vp.replace('ASF', 'json') for vp in video_paths]
 
-    speed_prediction_model_path = 'models/speed_prediction_model.tflite'
+    model_path = '../../speed_prediction_model/'
+    speed_prediction_model_path = model_path + 'speed_prediction_model.tflite'
+
+    features_path = 'features/data.csv'
 
     vehicles = parse_json(json_paths)
     print('json file was parsed successfully!\n')
@@ -334,28 +324,27 @@ def main():
             video_paths=video_paths,
             vehicles=vehicles,
             # modelpath=license_plate_detector_model_path,
-            # max_frames=5000,
             fq=fq,
-            ff=ff, # number of frame involved: fq - ff - 1
+            ff=ff,  # number of frame involved: fq - ff - 1
             verbose=1,
         )
 
         print('\naugmented data extracted successfully!')
 
-        save_data_in_file(X, y)
+        save_features_in_file(X, y, path=features_path)
     else:
-        X, y = load_data_from_file()
+        X, y = load_features_from_file(path=features_path)
         print('\naugmented data loaded successfully!')
 
     print('\ntraining model started...')
 
     model, scaler = train(X, y)
 
-    # dump(scaler, 'models/std_scaler.bin', compress=True)
+    dump(scaler, model_path + 'std_scaler.bin', compress=True)
 
-    # print('\nModel trained!')
+    print('\nModel trained!')
 
-    # save_model(model, speed_prediction_model_path)
+    save_model(model, speed_prediction_model_path)
 
 
 if __name__ == "__main__":
