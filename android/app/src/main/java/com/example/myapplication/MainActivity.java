@@ -9,12 +9,16 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.util.Log;
 import android.view.SurfaceView;
+import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.Toast;
 
@@ -30,6 +34,9 @@ import com.example.myapplication.ml.SpeedPredictionModel;
 import com.example.myapplication.ml.SpeedPredictionModelSideView;
 import com.example.myapplication.ml.SpeedPredictionTopViewNoPlateModel;
 import com.google.mlkit.vision.common.InputImage;
+import com.google.mlkit.vision.objects.DetectedObject;
+import com.google.mlkit.vision.objects.ObjectDetection;
+import com.google.mlkit.vision.objects.ObjectDetector;
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
 
 import org.opencv.android.Utils;
@@ -68,11 +75,10 @@ import org.opencv.core.Point;
 import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 
-
 public class MainActivity extends AppCompatActivity {
 
     public static final String TAG = "ObjectDetector";
-    private static String inVideoPath = "/sdcard/Download/video.mp4";
+    private static String inVideoPath = "/sdcard/Download/FILE0010.mp4";
     private static String outVideoPath = "/sdcard/Download/ou_.mp4";
     private static int maxFrames = 500;
 
@@ -84,6 +90,8 @@ public class MainActivity extends AppCompatActivity {
     private static SpeedPredictionTopViewNoPlateModel speedPredictionTopViewNoPlateModel;
     private static SpeedPredictionModel speedPredictionModel;
     private static SpeedPredictionModelSideView speedPredictionModelSideView;
+    private static SpeedPredictionModel OptFlowSpeedPredictionModel;
+    private static TensorBuffer speedInputFeature;
     private static TensorBuffer plateInputFeature;
     private static TensorBuffer topSpeedInputFeature1;
     private static TensorBuffer topSpeedInputFeature2;
@@ -98,10 +106,15 @@ public class MainActivity extends AppCompatActivity {
     private static int imW;
     private static int imH;
 
-    ActivityResultLauncher<String> filechoser;
+    ActivityResultLauncher<String> fileChooser;
     SurfaceView surfaceView;
     private ScheduledExecutorService scheduledExecutorService;
     private ObjectTrackerProcessor trackerProcessor;
+
+    private ObjectDetector objectDetector;
+    private ImageView imageView;
+    private TOFSpeedDetector tofSpeedDetector;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -110,14 +123,34 @@ public class MainActivity extends AppCompatActivity {
         getPermission();
         init();
 
-//        surfaceView = findViewById(R.id.surfaceView);
+//        imageView = findViewById(R.id.imageView);
+        surfaceView = findViewById(R.id.surfaceView);
 
-        filechoser = registerForActivityResult(
+        setupObjectDetector();
+        setupFileChooser();
+
+    }
+    private void setupObjectDetector() {
+        Log.d(TAG, "setupObjectDetector");
+
+        ObjectDetectorOptions options = new ObjectDetectorOptions.Builder()
+                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+                .enableClassification()  // Optional: Enable classification
+                .build();
+        objectDetector = ObjectDetection.getClient(options);
+    }
+
+    private void setupFileChooser() {
+        fileChooser = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
-                o -> {
-                    String path = getRealPathFromURI(MainActivity.this, o); // TODO: uncomment
-                    if (path == null)
+                uri -> {
+                    String path = getRealPathFromURI(MainActivity.this, uri);
+                    if (path == null) {
                         path = MainActivity.inVideoPath;
+                        Toast.makeText(getApplicationContext(),
+                                "Failed to get the file path",
+                                Toast.LENGTH_LONG).show();
+                    }
                     if(new File(path).exists())
                         MainActivity.inVideoPath = path;
                     String[] paths = MainActivity.inVideoPath.split("/");
@@ -126,24 +159,11 @@ public class MainActivity extends AppCompatActivity {
                     Toast.makeText(getApplicationContext(),
                             "out_path: " + outVideoPath,
                             Toast.LENGTH_LONG).show();
-//                    MainActivity.inVideoPath = getRealPathFromURI(MainActivity.this, o); // TODO: uncomment
                     System.out.println(MainActivity.inVideoPath);
 
-                    // Start updating frames periodically
-//                    startUpdatingFrames();
-                    startProcess();
+                    startProcessingVideo();
                 }
         );
-
-        // Live detection and tracking
-        ObjectDetectorOptions options =
-                new ObjectDetectorOptions.Builder()
-                        .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-                        .enableClassification()  // Optional
-                        .build();
-
-
-        trackerProcessor = new ObjectTrackerProcessor(this, options);
     }
 
     private static final int PERMISSION_REQUEST_CODE = 100;
@@ -155,16 +175,7 @@ public class MainActivity extends AppCompatActivity {
             ActivityCompat.requestPermissions(MainActivity.this,
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     PERMISSION_REQUEST_CODE);
-        }
-        if (ContextCompat.checkSelfPermission(MainActivity.this,
-                Manifest.permission.READ_EXTERNAL_STORAGE)
-                != PackageManager.PERMISSION_GRANTED) {
-            ActivityCompat.requestPermissions(MainActivity.this,
-                    new String[]{Manifest.permission.READ_EXTERNAL_STORAGE},
-                    PERMISSION_REQUEST_CODE);
-        }
-
-        else if (ContextCompat.checkSelfPermission(MainActivity.this,
+        } else if (ContextCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.READ_MEDIA_VIDEO)
                 != PackageManager.PERMISSION_GRANTED) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
@@ -172,9 +183,7 @@ public class MainActivity extends AppCompatActivity {
                         new String[]{Manifest.permission.READ_MEDIA_VIDEO},
                         PERMISSION_REQUEST_CODE);
             }
-        }
-
-        else if (ContextCompat.checkSelfPermission(MainActivity.this,
+        } else if (ContextCompat.checkSelfPermission(MainActivity.this,
                 Manifest.permission.INTERNET)
                 != PackageManager.PERMISSION_GRANTED) {
             System.out.println("*** has not internet access..");
@@ -203,6 +212,112 @@ public class MainActivity extends AppCompatActivity {
             }
         }
         return filePath;
+    }
+
+    private void startProcessingVideo() {
+            // Release resources
+        if (cap != null && cap.isOpened())
+            cap.release();
+        if (out != null && out.isOpened())
+            out.release();
+
+        cap = new VideoCapture();
+        cap.open(inVideoPath);
+        int fourcc = VideoWriter.fourcc('m', 'p', '4', 'v');
+        double fps = cap.get(Videoio.CAP_PROP_FPS);
+        int width = (int) cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
+        int height = (int) cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
+        out = new VideoWriter(outVideoPath, fourcc, fps, new Size(width, height));
+        Mat frame = new Mat();
+        if (cap.read(frame)) {
+            if (!frame.empty()) {
+                bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+                Utils.matToBitmap(frame, bitmap);
+                image = InputImage.fromBitmap(bitmap, 0);
+                processImage();
+            }
+        }
+//            scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
+            // Render the frame onto the canvas
+    //        Runnable updateFrameTask = () -> {
+
+//        };
+
+        // Schedule the task to run every 33 milliseconds (30 frames per second)
+//        scheduledExecutorService.scheduleAtFixedRate(
+//                updateFrameTask,
+//                0, // Initial delay
+//                50, // Period (milliseconds)
+//                TimeUnit.MILLISECONDS);
+
+
+//        new Thread(() -> {
+//            // Release resources
+//            if (cap != null && cap.isOpened())
+//                cap.release();
+//
+//            cap = new VideoCapture();
+//            cap.open(inVideoPath);
+////            int fourcc = VideoWriter.fourcc('m', 'p', '4', 'v');
+////            double fps = cap.get(Videoio.CAP_PROP_FPS);
+////            int width = (int) cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
+////            int height = (int) cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
+////            out = new VideoWriter(outVideoPath, fourcc, fps, new Size(width, height));
+//            Mat frame = new Mat();
+//            while (cap.read(frame)) {
+//                if (frame.empty()) {
+//                    break;
+//                }
+//
+//                // Convert the frame to a bitmap
+//                Bitmap bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+//                Utils.matToBitmap(frame, bitmap);
+//
+//                // Process the frame for object detection
+//                processImage(InputImage.fromBitmap(bitmap, 0));
+//
+//                try {
+//                    Thread.sleep(30);  // Adjust frame rate
+//                } catch (InterruptedException e) {
+//                    e.printStackTrace();
+//                }
+//            }
+//            cap.release();
+//        }).start();
+    }
+    InputImage image;
+    Bitmap bitmap, bitmap2;
+    Mat frame;
+    private void processImage() {
+        frame = new Mat();
+        if (cap.read(frame))
+        {
+            if (!frame.empty())
+            {
+                // Convert the frame to a bitmap
+
+                Utils.matToBitmap(frame, bitmap);
+                image = InputImage.fromBitmap(bitmap, 0);
+                objectDetector.process(image)
+                    .addOnSuccessListener(detectedObjects -> {
+                        Mat frame2 = new Mat();
+                        Utils.bitmapToMat(image.getBitmapInternal(), frame2);
+
+                        Canvas canvas = surfaceView.getHolder().lockCanvas();
+                        tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+
+                        runOnUiThread(() -> {
+                            if (canvas != null) {
+                                surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                            }
+                        });
+                        processImage();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Object detection failed", e);
+                    });
+            }
+        }
     }
 
     private void startProcess() {
@@ -241,8 +356,6 @@ public class MainActivity extends AppCompatActivity {
                 0, // Initial delay
                 1, // Period (milliseconds)
                 TimeUnit.MILLISECONDS);
-
-
     }
 
     private void startUpdatingFrames() {
@@ -321,7 +434,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     public void browseVideo(android.view.View view) {
-        filechoser.launch("video/*");
+        fileChooser.launch("video/*");
     }
 
     public static int getId(float x, float y, int imW) {
@@ -364,6 +477,11 @@ public class MainActivity extends AppCompatActivity {
             speedPredictionModelSideView = SpeedPredictionModelSideView.newInstance(MainActivity.this);
             sideSpeedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 3}, DataType.FLOAT32);
 
+            OptFlowSpeedPredictionModel = SpeedPredictionModel.newInstance(this);
+            speedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 22}, DataType.FLOAT32);
+
+            tofSpeedDetector = new TOFSpeedDetector(speedInputFeature, OptFlowSpeedPredictionModel);
+            
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

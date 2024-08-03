@@ -1,15 +1,20 @@
 package com.example.myapplication;
 
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.Paint;
+
 import com.example.myapplication.ml.SpeedPredictionModel;
 import com.google.mlkit.vision.objects.DetectedObject;
 
+import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfPoint2f;
 import org.opencv.core.Point;
 import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.core.TermCriteria;
 import org.opencv.imgproc.Imgproc;
@@ -34,8 +39,11 @@ public class TOFSpeedDetector {
     private static final int MAX_CORNERS = 20;
     private final TensorBuffer speedInputFeature;
     private final List<Mat> frames;
+    private final List<List<DetectedObject>> listOfObjList;
     private int frameNum = 0;
     private final SpeedPredictionModel speedPredictionModel;
+
+    private Paint rectPaint, textPaint;
 
     public TOFSpeedDetector(TensorBuffer speedInputFeature, SpeedPredictionModel speedPredictionModel) {
         this.speedInputFeature = speedInputFeature;
@@ -44,20 +52,67 @@ public class TOFSpeedDetector {
         for (int i = 0; i < fq; i++) {
             frames.add(new Mat());
         }
-    }
 
-    public Mat detectSpeeds(Mat frame, List<DetectedObject> detectedObjects) {
+        listOfObjList = new ArrayList<>(fq);
+        for (int i = 0; i < fq; i++) {
+            listOfObjList.add(new ArrayList<>());
+        }
+
+        rectPaint = new Paint();
+        rectPaint.setColor(Color.RED);
+        rectPaint.setStyle(Paint.Style.STROKE);
+        rectPaint.setStrokeWidth(8.0f);
+
+        textPaint = new Paint();
+        textPaint.setTextSize(160);
+        textPaint.setColor(Color.RED);
+        textPaint.setStyle(Paint.Style.STROKE);
+        textPaint.setStrokeWidth(16.0f);
+
+    }
+    Bitmap bitmap;
+    public void detectSpeeds(Mat frame, List<DetectedObject> detectedObjects, Canvas canvas) {
+
 
         frames.set(frameNum % fq, frame.clone());
+        listOfObjList.set(frameNum % fq, new ArrayList<>(detectedObjects));
         frameNum++;
 
-        if (frameNum < fq)
-            return frame; // todo
-        System.out.println("### detectSpeeds");
-        Mat output = frames.get((frameNum - fq) % fq).clone();
+        if (frameNum < fq) {
+            bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(frame, bitmap);
 
-        System.out.println("### detectedObjects.size() = " + detectedObjects.size());
-        for (DetectedObject object : detectedObjects) {
+            if (canvas != null) {
+                // Render the frame onto the canvas
+                int w = canvas.getWidth();
+                int h = canvas.getHeight();
+                Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, w, h, false);
+                canvas.drawBitmap(scaledBitmap, 0, 0, null);
+            }
+            return;
+        }
+
+        bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(frames.get((frameNum - fq) % fq).clone(), bitmap);
+//        Utils.matToBitmap(frame, bitmap);
+        double sx = 1, sy = 1;
+        double hf = frame.height();
+        double wf = frame.width();
+        if (canvas != null) {
+            // Render the frame onto the canvas
+            int w = canvas.getWidth();
+            int h = canvas.getHeight();
+
+            sx = w /wf;
+            sy = h /hf;
+
+            System.out.println("sx = " + sx);
+
+            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, w, h, false);
+            canvas.drawBitmap(scaledBitmap, 0, 0, null);
+        } else return;
+
+        for (DetectedObject object : listOfObjList.get((frameNum - fq) % fq)) {
             Rect bBox = new Rect(object.getBoundingBox().left, object.getBoundingBox().top,
                     object.getBoundingBox().right, object.getBoundingBox().bottom);
             System.out.println("### " + bBox);
@@ -132,21 +187,18 @@ public class TOFSpeedDetector {
                 int speed = (int) predictedSpeed;
                 // Draw label text
 
-                Imgproc.putText(output,
-                        Float.toString((float) speed / 10),
-                        bBox.tl(),
-                        Imgproc.FONT_HERSHEY_PLAIN,
-//                    4.5*imW/1920,
-                        4.5,
-                        new Scalar(255, 0, 0),
-//                    6*imW/1920);
-                        6);
-                Imgproc.rectangle(output, bBox.tl(), bBox.br(), new Scalar(255, 0, 0), 3);
+                android.graphics.Rect scaledBBox = new android.graphics.Rect(
+                        (int) (bBox.tl().x * sx),
+                        (int) (bBox.tl().y * sy),
+                        (int) (bBox.br().x * sx),
+                        (int) (bBox.br().y * sy)
+                );
+                canvas.drawRect(scaledBBox, rectPaint);
+                canvas.drawText(Float.toString((float) speed / 10), scaledBBox.left+16, scaledBBox.top+160, textPaint);
             }
 
         }
 
-        return output;
     }
 
     public ByteBuffer doubleToByteBuffer(double[] data) {

@@ -1,6 +1,7 @@
 [versions]
 agp = "8.3.1"
 common = "18.10.0"
+exoplayer = "2.19.1"
 junit = "4.13.2"
 junitVersion = "1.1.5"
 espressoCore = "3.5.1"
@@ -14,6 +15,7 @@ tensorflowLiteMetadata = "0.1.0"
 
 [libraries]
 common = { module = "com.google.mlkit:common", version.ref = "common" }
+exoplayer = { module = "com.google.android.exoplayer:exoplayer", version.ref = "exoplayer" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 ext-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }

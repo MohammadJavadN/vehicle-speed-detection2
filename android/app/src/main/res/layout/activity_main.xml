@@ -17,30 +17,31 @@
         android:layout_margin="20dp"
         />
 
-<!--    <SurfaceView-->
-<!--        android:id="@+id/surfaceView"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_below="@+id/browseBtn"-->
-<!--        android:layout_centerHorizontal="true"-->
-<!--        android:layout_margin="20dp"-->
-<!--        android:onClick="browseVideo"-->
-<!--        />-->
-
-    <com.google.mlkit.vision.GraphicOverlay
-        android:id="@+id/overlayView"
-        android:layout_width="288dp"
-        android:layout_height="516dp"
+    <SurfaceView
+        android:id="@+id/surfaceView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_below="@+id/browseBtn"
-        android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
-        android:layout_marginStart="20dp"
-        android:layout_marginLeft="20dp"
-        android:layout_marginTop="20dp"
-        android:layout_marginEnd="20dp"
-        android:layout_marginRight="20dp"
-        android:layout_marginBottom="60dp"
-        android:scaleType="fitXY" />
+        android:layout_margin="20dp"
+        android:onClick="browseVideo"
+        />
+
+
+<!--    <com.google.mlkit.vision.GraphicOverlay-->
+<!--        android:id="@+id/overlayView"-->
+<!--        android:layout_width="288dp"-->
+<!--        android:layout_height="516dp"-->
+<!--        android:layout_below="@+id/browseBtn"-->
+<!--        android:layout_alignParentBottom="true"-->
+<!--        android:layout_centerHorizontal="true"-->
+<!--        android:layout_marginStart="20dp"-->
+<!--        android:layout_marginLeft="20dp"-->
+<!--        android:layout_marginTop="20dp"-->
+<!--        android:layout_marginEnd="20dp"-->
+<!--        android:layout_marginRight="20dp"-->
+<!--        android:layout_marginBottom="60dp"-->
+<!--        android:scaleType="fitXY" />-->
 
     <Button
         android:layout_width="wrap_content"
