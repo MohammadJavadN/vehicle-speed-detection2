@@ -9,9 +9,7 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Matrix;
-import android.graphics.Paint;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -34,20 +32,27 @@ import com.example.myapplication.ml.SpeedPredictionModel;
 import com.example.myapplication.ml.SpeedPredictionModelSideView;
 import com.example.myapplication.ml.SpeedPredictionTopViewNoPlateModel;
 import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.objects.DetectedObject;
 import com.google.mlkit.vision.objects.ObjectDetection;
 import com.google.mlkit.vision.objects.ObjectDetector;
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
 
 import org.opencv.android.Utils;
+import org.opencv.core.Core;
+import org.opencv.core.CvType;
+import org.opencv.core.Mat;
 import org.opencv.core.MatOfByte;
 import org.opencv.core.MatOfFloat;
 import org.opencv.core.MatOfPoint;
 import org.opencv.core.MatOfPoint2f;
+import org.opencv.core.Point;
+import org.opencv.core.Scalar;
+import org.opencv.core.Size;
 import org.opencv.core.TermCriteria;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.video.Video;
+import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.VideoWriter;
+import org.opencv.videoio.Videoio;
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
@@ -63,17 +68,6 @@ import java.util.Map;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
-
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.videoio.VideoCapture;
-import org.opencv.videoio.Videoio;
-
-
-import org.opencv.core.Point;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -112,7 +106,6 @@ public class MainActivity extends AppCompatActivity {
     private ObjectTrackerProcessor trackerProcessor;
 
     private ObjectDetector objectDetector;
-    private ImageView imageView;
     private TOFSpeedDetector tofSpeedDetector;
 
     @Override
@@ -123,7 +116,6 @@ public class MainActivity extends AppCompatActivity {
         getPermission();
         init();
 
-//        imageView = findViewById(R.id.imageView);
         surfaceView = findViewById(R.id.surfaceView);
 
         setupObjectDetector();
@@ -237,45 +229,16 @@ public class MainActivity extends AppCompatActivity {
                 processImage();
             }
         }
-//            scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-            // Render the frame onto the canvas
-    //        Runnable updateFrameTask = () -> {
 
-//        };
-
-        // Schedule the task to run every 33 milliseconds (30 frames per second)
-//        scheduledExecutorService.scheduleAtFixedRate(
-//                updateFrameTask,
-//                0, // Initial delay
-//                50, // Period (milliseconds)
-//                TimeUnit.MILLISECONDS);
-
-
+//        finished = false;
+//        flag = true;
 //        new Thread(() -> {
-//            // Release resources
-//            if (cap != null && cap.isOpened())
-//                cap.release();
-//
-//            cap = new VideoCapture();
-//            cap.open(inVideoPath);
-////            int fourcc = VideoWriter.fourcc('m', 'p', '4', 'v');
-////            double fps = cap.get(Videoio.CAP_PROP_FPS);
-////            int width = (int) cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
-////            int height = (int) cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
-////            out = new VideoWriter(outVideoPath, fourcc, fps, new Size(width, height));
-//            Mat frame = new Mat();
-//            while (cap.read(frame)) {
-//                if (frame.empty()) {
-//                    break;
-//                }
-//
-//                // Convert the frame to a bitmap
-//                Bitmap bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
-//                Utils.matToBitmap(frame, bitmap);
-//
+//            while (!finished) {
 //                // Process the frame for object detection
-//                processImage(InputImage.fromBitmap(bitmap, 0));
-//
+//                if (flag) {
+//                    flag = false;
+//                    processImage();
+//                }
 //                try {
 //                    Thread.sleep(30);  // Adjust frame rate
 //                } catch (InterruptedException e) {
@@ -285,8 +248,9 @@ public class MainActivity extends AppCompatActivity {
 //            cap.release();
 //        }).start();
     }
+    boolean finished = false, flag = true;
     InputImage image;
-    Bitmap bitmap, bitmap2;
+    Bitmap bitmap;
     Mat frame;
     private void processImage() {
         frame = new Mat();
@@ -317,7 +281,8 @@ public class MainActivity extends AppCompatActivity {
                         Log.e(TAG, "Object detection failed", e);
                     });
             }
-        }
+        } else
+            finished = true;
     }
 
     private void startProcess() {

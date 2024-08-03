@@ -40,10 +40,11 @@ public class TOFSpeedDetector {
     private final TensorBuffer speedInputFeature;
     private final List<Mat> frames;
     private final List<List<DetectedObject>> listOfObjList;
-    private int frameNum = 0;
     private final SpeedPredictionModel speedPredictionModel;
-
-    private Paint rectPaint, textPaint;
+    private final Paint rectPaint;
+    private final Paint textPaint;
+    Bitmap bitmap;
+    private int frameNum = 0;
 
     public TOFSpeedDetector(TensorBuffer speedInputFeature, SpeedPredictionModel speedPredictionModel) {
         this.speedInputFeature = speedInputFeature;
@@ -70,7 +71,7 @@ public class TOFSpeedDetector {
         textPaint.setStrokeWidth(16.0f);
 
     }
-    Bitmap bitmap;
+
     public void detectSpeeds(Mat frame, List<DetectedObject> detectedObjects, Canvas canvas) {
 
 
@@ -95,7 +96,7 @@ public class TOFSpeedDetector {
         bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(frames.get((frameNum - fq) % fq).clone(), bitmap);
 //        Utils.matToBitmap(frame, bitmap);
-        double sx = 1, sy = 1;
+        double sx, sy;
         double hf = frame.height();
         double wf = frame.width();
         if (canvas != null) {
@@ -103,10 +104,8 @@ public class TOFSpeedDetector {
             int w = canvas.getWidth();
             int h = canvas.getHeight();
 
-            sx = w /wf;
-            sy = h /hf;
-
-            System.out.println("sx = " + sx);
+            sx = w / wf;
+            sy = h / hf;
 
             Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, w, h, false);
             canvas.drawBitmap(scaledBitmap, 0, 0, null);
@@ -115,7 +114,6 @@ public class TOFSpeedDetector {
         for (DetectedObject object : listOfObjList.get((frameNum - fq) % fq)) {
             Rect bBox = new Rect(object.getBoundingBox().left, object.getBoundingBox().top,
                     object.getBoundingBox().right, object.getBoundingBox().bottom);
-            System.out.println("### " + bBox);
 
             Random random = new Random();
 
@@ -194,7 +192,7 @@ public class TOFSpeedDetector {
                         (int) (bBox.br().y * sy)
                 );
                 canvas.drawRect(scaledBBox, rectPaint);
-                canvas.drawText(Float.toString((float) speed / 10), scaledBBox.left+16, scaledBBox.top+160, textPaint);
+                canvas.drawText(Float.toString((float) speed / 10), scaledBBox.left + 16, scaledBBox.top + 160, textPaint);
             }
 
         }
