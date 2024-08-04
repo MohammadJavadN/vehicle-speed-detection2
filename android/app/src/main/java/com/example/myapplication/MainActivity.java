@@ -31,9 +31,11 @@ import com.example.myapplication.ml.LicensePlateDetectorFloat32;
 import com.example.myapplication.ml.SpeedPredictionModel;
 import com.example.myapplication.ml.SpeedPredictionModelSideView;
 import com.example.myapplication.ml.SpeedPredictionTopViewNoPlateModel;
+import com.google.mlkit.common.model.LocalModel;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.objects.ObjectDetection;
 import com.google.mlkit.vision.objects.ObjectDetector;
+import com.google.mlkit.vision.objects.custom.CustomObjectDetectorOptions;
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
 
 import org.opencv.android.Utils;
@@ -125,11 +127,30 @@ public class MainActivity extends AppCompatActivity {
     private void setupObjectDetector() {
         Log.d(TAG, "setupObjectDetector");
 
-        ObjectDetectorOptions options = new ObjectDetectorOptions.Builder()
-                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-                .enableClassification()  // Optional: Enable classification
-                .build();
-        objectDetector = ObjectDetection.getClient(options);
+//        ObjectDetectorOptions options = new ObjectDetectorOptions.Builder()
+//                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+//                .enableClassification()  // Optional: Enable classification
+//                .build();
+//        objectDetector = ObjectDetection.getClient(options);
+
+
+        LocalModel localModel =
+                new LocalModel.Builder()
+                        .setAssetFilePath("efficientnet.tflite")
+                        // or .setAbsoluteFilePath(absolute file path to model file)
+                        // or .setUri(URI to model file)
+                        .build();
+
+        // Multiple object detection in static images
+        CustomObjectDetectorOptions customObjectDetectorOptions =
+                new CustomObjectDetectorOptions.Builder(localModel)
+                        .setDetectorMode(CustomObjectDetectorOptions.SINGLE_IMAGE_MODE)
+                        .enableMultipleObjects()
+                        .enableClassification()
+                        .setClassificationConfidenceThreshold(0.5f)
+                        .setMaxPerObjectLabelCount(3)
+                        .build();
+        objectDetector = ObjectDetection.getClient(customObjectDetectorOptions);
     }
 
     private void setupFileChooser() {
