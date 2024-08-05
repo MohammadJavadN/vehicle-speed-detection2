@@ -9,14 +9,17 @@ import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.Color;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.Rect;
+import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
 import android.view.SurfaceView;
-import android.widget.ImageView;
 import android.widget.Switch;
 import android.widget.Toast;
 
@@ -31,12 +34,9 @@ import com.example.myapplication.ml.LicensePlateDetectorFloat32;
 import com.example.myapplication.ml.SpeedPredictionModel;
 import com.example.myapplication.ml.SpeedPredictionModelSideView;
 import com.example.myapplication.ml.SpeedPredictionTopViewNoPlateModel;
-import com.google.mlkit.common.model.LocalModel;
+import com.example.myapplication.ml.Yolov8nFloat32;
 import com.google.mlkit.vision.common.InputImage;
-import com.google.mlkit.vision.objects.ObjectDetection;
-import com.google.mlkit.vision.objects.ObjectDetector;
-import com.google.mlkit.vision.objects.custom.CustomObjectDetectorOptions;
-import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
+import com.google.mlkit.vision.objects.DetectedObject;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -56,12 +56,16 @@ import org.opencv.videoio.VideoCapture;
 import org.opencv.videoio.VideoWriter;
 import org.opencv.videoio.Videoio;
 import org.tensorflow.lite.DataType;
+import org.tensorflow.lite.Interpreter;
+import org.tensorflow.lite.support.common.FileUtil;
+import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
+import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -107,7 +111,8 @@ public class MainActivity extends AppCompatActivity {
     private ScheduledExecutorService scheduledExecutorService;
     private ObjectTrackerProcessor trackerProcessor;
 
-    private ObjectDetector objectDetector;
+    private Yolov8nFloat32 objectDetector;
+    //    private ObjectDetector objectDetector;
     private TOFSpeedDetector tofSpeedDetector;
 
     @Override
@@ -124,9 +129,10 @@ public class MainActivity extends AppCompatActivity {
         setupFileChooser();
 
     }
+    Yolov8ObjectDetector yolov8ObjectDetector;
     private void setupObjectDetector() {
         Log.d(TAG, "setupObjectDetector");
-
+//***************************** ml kit model *********************************
 //        ObjectDetectorOptions options = new ObjectDetectorOptions.Builder()
 //                .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
 //                .enableClassification()  // Optional: Enable classification
@@ -134,25 +140,32 @@ public class MainActivity extends AppCompatActivity {
 //        objectDetector = ObjectDetection.getClient(options);
 
 
-        LocalModel localModel =
-                new LocalModel.Builder()
-                        .setAssetFilePath("efficientnet.tflite")
-                        // or .setAbsoluteFilePath(absolute file path to model file)
-                        // or .setUri(URI to model file)
-                        .build();
+//*********************** costume classifier in ml-kit model *****************
+//        LocalModel localModel =
+//                new LocalModel.Builder()
+//                        .setAssetFilePath("efficientnet.tflite")
+//                        // or .setAbsoluteFilePath(absolute file path to model file)
+//                        // or .setUri(URI to model file)
+//                        .build();
+//
+//        // Multiple object detection in static images
+//        CustomObjectDetectorOptions customObjectDetectorOptions =
+//                new CustomObjectDetectorOptions.Builder(localModel)
+//                        .setDetectorMode(CustomObjectDetectorOptions.SINGLE_IMAGE_MODE)
+//                        .enableMultipleObjects()
+//                        .enableClassification()
+//                        .setClassificationConfidenceThreshold(0.5f)
+//                        .setMaxPerObjectLabelCount(3)
+//                        .build();
+//        objectDetector = ObjectDetection.getClient(customObjectDetectorOptions);
 
-        // Multiple object detection in static images
-        CustomObjectDetectorOptions customObjectDetectorOptions =
-                new CustomObjectDetectorOptions.Builder(localModel)
-                        .setDetectorMode(CustomObjectDetectorOptions.SINGLE_IMAGE_MODE)
-                        .enableMultipleObjects()
-                        .enableClassification()
-                        .setClassificationConfidenceThreshold(0.5f)
-                        .setMaxPerObjectLabelCount(3)
-                        .build();
-        objectDetector = ObjectDetection.getClient(customObjectDetectorOptions);
+//***************************** tflite model *********************************
+        yolov8ObjectDetector = new Yolov8ObjectDetector();
+        yolov8ObjectDetector.setModelFile("yolov8n_float32.tflite");
+        yolov8ObjectDetector.initialModel(this);
+
     }
-
+    Interpreter interpreter;
     private void setupFileChooser() {
         fileChooser = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
@@ -228,7 +241,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void startProcessingVideo() {
-            // Release resources
+        // Release resources
         if (cap != null && cap.isOpened())
             cap.release();
         if (out != null && out.isOpened())
@@ -246,31 +259,33 @@ public class MainActivity extends AppCompatActivity {
             if (!frame.empty()) {
                 bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
                 Utils.matToBitmap(frame, bitmap);
-                image = InputImage.fromBitmap(bitmap, 0);
+//                image = InputImage.fromBitmap(bitmap, 0);
+                image = TensorImage.fromBitmap(bitmap);
                 processImage();
             }
         }
 
-//        finished = false;
-//        flag = true;
-//        new Thread(() -> {
-//            while (!finished) {
-//                // Process the frame for object detection
-//                if (flag) {
-//                    flag = false;
-//                    processImage();
-//                }
-//                try {
-//                    Thread.sleep(30);  // Adjust frame rate
-//                } catch (InterruptedException e) {
-//                    e.printStackTrace();
-//                }
-//            }
-//            cap.release();
-//        }).start();
+        finished = false;
+        flag = true;
+        new Thread(() -> {
+            while (!finished) {
+                // Process the frame for object detection
+                if (flag) {
+                    flag = false;
+                    processImage();
+                }
+                try {
+                    Thread.sleep(30);  // Adjust frame rate
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
+            cap.release();
+        }).start();
     }
     boolean finished = false, flag = true;
-    InputImage image;
+    TensorImage image;
+    //    InputImage image;
     Bitmap bitmap;
     Mat frame;
     private void processImage() {
@@ -279,33 +294,128 @@ public class MainActivity extends AppCompatActivity {
         {
             if (!frame.empty())
             {
-                // Convert the frame to a bitmap
-
                 Utils.matToBitmap(frame, bitmap);
-                image = InputImage.fromBitmap(bitmap, 0);
-                objectDetector.process(image)
-                    .addOnSuccessListener(detectedObjects -> {
-                        Mat frame2 = new Mat();
-                        Utils.bitmapToMat(image.getBitmapInternal(), frame2);
 
-                        Canvas canvas = surfaceView.getHolder().lockCanvas();
-                        tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+//                // Resize the frame to the expected input size (640x640)
+//                Mat resizedFrame = new Mat();
+//                Size size = new Size(640, 640);
+//                Imgproc.resize(frame, resizedFrame, size);
+//
+//                // Convert the resized frame to a bitmap
+//                Bitmap resizedBitmap = Bitmap.createBitmap(resizedFrame.cols(), resizedFrame.rows(), Bitmap.Config.ARGB_8888);
+//                Utils.matToBitmap(resizedFrame, resizedBitmap);
+//
+//                // Creates inputs for reference
+//                TensorImage image = TensorImage.fromBitmap(resizedBitmap);
+//
+//                // Debug: Check input shape
+//                int[] inputShape = image.getTensorBuffer().getShape();
+//                Log.d("InputShape", "Input shape: " + Arrays.toString(inputShape));
+//
+//                // Runs model inference and gets result
+//                Yolov8nFloat32.Outputs outputs = objectDetector.process(image);
+//
+//                ArrayList<DetectedObject> detectedObjects = extractObjects(outputs, frame.width(),frame.height());
 
-                        runOnUiThread(() -> {
-                            if (canvas != null) {
-                                surfaceView.getHolder().unlockCanvasAndPost(canvas);
-                            }
-                        });
-                        processImage();
-                    })
-                    .addOnFailureListener(e -> {
-                        Log.e(TAG, "Object detection failed", e);
-                    });
+                ArrayList<Recognition> recognitions =  yolov8ObjectDetector.detect(bitmap);
+                Bitmap mutableBitmap = bitmap.copy(Bitmap.Config.ARGB_8888, true);
+
+                Canvas canvas = surfaceView.getHolder().lockCanvas();
+//                tofSpeedDetector.detectSpeeds(frame, detectedObjects, canvas); // todo
+
+                Paint boxPaint = new Paint();
+                boxPaint.setStrokeWidth(5);
+                boxPaint.setStyle(Paint.Style.STROKE);
+                boxPaint.setColor(Color.RED);
+
+                Paint textPain = new Paint();
+                textPain.setTextSize(50);
+                textPain.setColor(Color.GREEN);
+                textPain.setStyle(Paint.Style.FILL);
+
+//                runOnUiThread(() -> {
+                if (canvas != null) {
+                    // Render the frame onto the canvas
+                    int w = canvas.getWidth();
+                    int h = canvas.getHeight();
+
+//                        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap, w, h, false);
+                    canvas.drawBitmap(bitmap, 0, 0, null);
+
+                    for(Recognition recognition: recognitions){
+                        if(recognition.getConfidence() > 0.4){
+                            RectF location = recognition.getLocation();
+                            canvas.drawRect(location, boxPaint);
+                            canvas.drawText(recognition.getLabelName() + ":" + recognition.getConfidence(), location.left, location.top, textPain);
+                        }
+                    }
+                    surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                }
+//                });
+                flag = true;
             }
         } else
             finished = true;
     }
 
+    private static ArrayList<DetectedObject> extractObjects(Yolov8nFloat32.Outputs outputs, int width, int height) {
+
+        // Debug: Check raw output tensor
+        TensorBuffer outputBuffer = outputs.getOutputAsTensorBuffer();
+        int[] outputShape = outputBuffer.getShape();
+
+        // Debug: Print raw output data
+        float[] outputData = outputBuffer.getFloatArray();
+
+        final int N = outputShape[2];
+        final float threshold = 0.7f;
+        System.out.println("outputShape = " + Arrays.toString(outputShape));
+        System.out.println("N = " + N);
+        ArrayList<DetectedObject> detectedObjects = new ArrayList<>();
+        float max = 0;
+        int maxi = 0, maxj = 0;
+        for (int j = 0; j < N; j++) {
+            for (int i = 4; i < outputShape[1]; i++) {
+                if (outputData[i * N + j] > max) {
+                    max = outputData[i * N + j];
+                    maxi = i;
+                    maxj = j;
+                }
+//                if (outputData[6 * N + j] > threshold)
+//                    System.out.print(outputData[6 * N + j] + ": {" + outputData[j + 2*N] + ", " + outputData[j + 3*N] + "}, ");
+//                else
+//                    System.out.print(" ");
+            }
+////            System.out.print("\n");
+        }
+        System.out.println("*** maxi, maxj = {" + maxi + ", " + maxj + "} = " + max);
+        for (int i = 0; i < N; i++) {
+            if(outputData[49*N+i] > threshold)
+            {
+//                System.out.println("it is bigger than threshold!");
+                float x = outputData[i];
+                float y = outputData[i + N];
+                float w = outputData[i + 2*N];
+                float h = outputData[i + 3*N];
+                System.out.println("x,y,w,h: " + x + ", " + y + ", " + w + ", " + h);
+                detectedObjects.add(new DetectedObject(
+                                new android.graphics.Rect(
+                                        (int) (x * width),
+                                        (int) (y * height),
+                                        (int) ((x + w) * width),
+                                        (int) ((y + h) * height)
+                                ),
+                                null,
+                                new ArrayList<>()
+                        )
+                );
+                System.out.println("go for next...");
+
+            }
+        }
+        return detectedObjects;
+
+    }
     private void startProcess() {
         // Release resources
         if (cap != null && cap.isOpened())
@@ -467,7 +577,7 @@ public class MainActivity extends AppCompatActivity {
             speedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 22}, DataType.FLOAT32);
 
             tofSpeedDetector = new TOFSpeedDetector(speedInputFeature, OptFlowSpeedPredictionModel);
-            
+
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
