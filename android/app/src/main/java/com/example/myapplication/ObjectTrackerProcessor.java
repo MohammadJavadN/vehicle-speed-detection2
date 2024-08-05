@@ -1,6 +1,7 @@
 package com.example.myapplication;
 
 import android.content.Context;
+import android.graphics.Rect;
 import android.util.Log;
 
 import androidx.annotation.NonNull;
@@ -13,14 +14,11 @@ import com.google.mlkit.vision.objects.DetectedObject;
 import com.google.mlkit.vision.objects.ObjectDetection;
 import com.google.mlkit.vision.objects.ObjectDetector;
 import com.google.mlkit.vision.objects.ObjectDetectorOptionsBase;
-import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
 
-import org.opencv.core.Rect;
-import org.opencv.core.Mat;
 //import org.opencv.tracking.Tracker;
 //import org.opencv.tracking.TrackerKCF; // Import the desired tracking algorithm
-import org.opencv.video.Tracker;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObject>> {
@@ -28,11 +26,15 @@ public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObj
     private static final String TAG = "ObjectTrackerProcessor";
 
     private final ObjectDetector detector;
+    private final List<MyDetectedObject> prevObjects;
+    double DISTANCE_TH = 50;
+    private int frameNum;
 
     public ObjectTrackerProcessor(Context context, ObjectDetectorOptionsBase options) {
         super(context);
-        System.out.println("*** 34 of ObjectTrackerProcessor class");
         detector = ObjectDetection.getClient(options);
+        frameNum = 0;
+        prevObjects = new ArrayList<>();
     }
 
     @Override
@@ -49,11 +51,12 @@ public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObj
     @Override
     protected void onSuccess(
             @NonNull List<DetectedObject> results, @NonNull GraphicOverlay graphicOverlay) {
-        for (DetectedObject object : results) {
-            // TODO: 18.04.24 is need to call graphicOverlay.setImageSourceInfo(...)?
+        frameNum++;
+        setIDAndSpeed(results);
+        removeOutObj();
+        for (MyDetectedObject object : prevObjects) {
             graphicOverlay.add(new ObjectGraphic(graphicOverlay, object));
         }
-        graphicOverlay.postInvalidate();
     }
 
     @Override
@@ -61,69 +64,59 @@ public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObj
         Log.e(TAG, "Object detection failed!", e);
     }
 
+    private void removeOutObj() {
+        prevObjects.removeIf(prevObj -> prevObj.frameNum < frameNum);
 
+    }
 
+    private void setIDAndSpeed(List<DetectedObject> currObjects) {
+        for (DetectedObject currObj : currObjects) {
 
-//    private Tracker tracker;
-//    private boolean isObjectDetected = false;
-//    private Rect detectedObject;
-//
-//    // Initialize the tracker with the first frame and the detected object(s)
-//    public void initializeTracker(Mat frame, Rect objects) {
-//
-//
-//    }
-//
-//    // Perform object tracking on subsequent frames
-//    public void trackObject(Mat frame) {
-//        InputImage image = InputImage.fromBitmap(bitmap, rotationDegree);
-//        objectDetector.process(image)
-//                .addOnSuccessListener(
-//                        new OnSuccessListener<List<DetectedObject>>() {
-//                            @Override
-//                            public void onSuccess(List<DetectedObject> detectedObjects) {
-//                                // Task completed successfully
-//                                // ...
-//                            }
-//                        })
-//                .addOnFailureListener(
-//                        new OnFailureListener() {
-//                            @Override
-//                            public void onFailure(@NonNull Exception e) {
-//                                // Task failed with an exception
-//                                // ...
-//                            }
-//                        });
-////        if (isObjectDetected && tracker != null) {
-////            // Update the tracker with the new frame
-////            isObjectDetected = tracker.update(frame, detectedObject);
-////            // Visualize the tracked object(s)
-////                Imgproc.rectangle(frame, detectedObject.tl(), detectedObject.br(), new Scalar(0, 255, 0), 2); // Green bounding box
-////        }
-//    }
-//
-//    public ObjectTrackerProcessor() {
-//        // Live detection and tracking
-//        ObjectDetectorOptions options =
-//                new ObjectDetectorOptions.Builder()
-//                        .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
-//                        .enableClassification()  // Optional
-//                        .build();
-//
-//        ObjectDetector objectDetector = ObjectDetection.getClient(options);
-////        // Multiple object detection in static images
-////        ObjectDetectorOptions options =
-////                new ObjectDetectorOptions.Builder()
-////                        .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
-////                        .enableMultipleObjects()
-////                        .enableClassification()  // Optional
-////                        .build();
-//
-//    }
-//
-//    // Method to handle loss of tracking or occlusions
-//    public void handleLossOfTracking() {
-//        // Implement your logic here to handle loss of tracking or occlusions
-//        // For example, you can try to re-detect the object or reset the tracking process
-//    }
+            Rect currRect = currObj.getBoundingBox();
+            int id = -1;
+            double minD = Double.MAX_VALUE;
+
+            for (MyDetectedObject prevObj : prevObjects) {
+                if (prevObj.frameNum < frameNum) {
+                    double d = distance(currRect, prevObj.getBoundingBox());
+                    if (d < minD) {
+                        minD = d;
+                        id = prevObj.id;
+                    }
+                }
+            }
+            if (minD > DISTANCE_TH)
+                addNewObj(currObj);
+            else
+                updateObj(id, currObj);
+        }
+    }
+
+    private double distance(Rect rect1, Rect rect2) {
+        double d = Math.sqrt(
+                Math.pow(rect1.centerX() - rect2.centerX(), 2) +
+                        Math.pow(rect1.centerY() - rect2.centerY(), 2)
+        );// * Math.max(rect1.height()/rect2.height(), rect2.height()/rect1.height()); todo
+
+        return d;
+    }
+
+    private void updateObj(int id, DetectedObject object) {
+        for (MyDetectedObject prevObj : prevObjects) {
+            if (prevObj.id == id) {
+                prevObj.updateBoxAndSpeed(object.getBoundingBox(), frameNum);
+                prevObj.frameNum = frameNum;
+                break;
+            }
+        }
+    }
+
+    private void addNewObj(DetectedObject object) {
+        prevObjects.add(
+                new MyDetectedObject(
+                        object.getBoundingBox(),
+                        frameNum
+                )
+        );
+    }
 }

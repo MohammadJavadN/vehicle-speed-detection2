@@ -16,12 +16,20 @@
 
 package com.google.mlkit.vision;
 
-/** Describing a frame info. */
+/**
+ * Describing a frame info.
+ */
 public class FrameMetadata {
 
   private final int width;
   private final int height;
   private final int rotation;
+
+  private FrameMetadata(int width, int height, int rotation) {
+    this.width = width;
+    this.height = height;
+    this.rotation = rotation;
+  }
 
   public int getWidth() {
     return width;
@@ -35,13 +43,9 @@ public class FrameMetadata {
     return rotation;
   }
 
-  private FrameMetadata(int width, int height, int rotation) {
-    this.width = width;
-    this.height = height;
-    this.rotation = rotation;
-  }
-
-  /** Builder of {@link FrameMetadata}. */
+  /**
+   * Builder of {@link FrameMetadata}.
+   */
   public static class Builder {
 
     private int width;

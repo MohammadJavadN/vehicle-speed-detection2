@@ -4,6 +4,7 @@ import static com.google.mlkit.vision.BitmapUtils.matToBitmap;
 import static java.lang.Math.abs;
 
 import android.Manifest;
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
@@ -19,7 +20,9 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.MotionEvent;
 import android.view.SurfaceView;
+import android.view.View;
 import android.widget.Switch;
 import android.widget.Toast;
 
@@ -35,8 +38,10 @@ import com.example.myapplication.ml.SpeedPredictionModel;
 import com.example.myapplication.ml.SpeedPredictionModelSideView;
 import com.example.myapplication.ml.SpeedPredictionTopViewNoPlateModel;
 import com.example.myapplication.ml.Yolov8nFloat32;
+import com.google.mlkit.vision.GraphicOverlay;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.objects.DetectedObject;
+import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
 
 import org.opencv.android.Utils;
 import org.opencv.core.Core;
@@ -69,13 +74,16 @@ import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     public static final String TAG = "ObjectDetector";
     private static String inVideoPath = "/sdcard/Download/FILE0010.mp4";
@@ -83,7 +91,7 @@ public class MainActivity extends AppCompatActivity {
     private static int maxFrames = 500;
 
     private static VideoCapture cap;
-    private static VideoWriter out;
+    private static MyVideoEncoder out;
     private static final Scalar speedColor = new Scalar(255,0,0);
 
     private static LicensePlateDetectorFloat32 plateDetectorModel;
@@ -114,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
     private Yolov8nFloat32 objectDetector;
     //    private ObjectDetector objectDetector;
     private TOFSpeedDetector tofSpeedDetector;
-
+    private GraphicOverlay graphicOverlay;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -123,7 +131,10 @@ public class MainActivity extends AppCompatActivity {
         getPermission();
         init();
 
-        surfaceView = findViewById(R.id.surfaceView);
+        graphicOverlay = findViewById(R.id.overlayView);
+
+//        surfaceView = findViewById(R.id.surfaceView);
+        initializeCircles();
 
         setupObjectDetector();
         setupFileChooser();
@@ -160,34 +171,98 @@ public class MainActivity extends AppCompatActivity {
 //        objectDetector = ObjectDetection.getClient(customObjectDetectorOptions);
 
 //***************************** tflite model *********************************
-        yolov8ObjectDetector = new Yolov8ObjectDetector();
-        yolov8ObjectDetector.setModelFile("yolov8n_float32.tflite");
-        yolov8ObjectDetector.initialModel(this);
+//        yolov8ObjectDetector = new Yolov8ObjectDetector();
+//        yolov8ObjectDetector.setModelFile("yolov8n_float32.tflite");
+//        yolov8ObjectDetector.initialModel(this);
 
+//***************************** ml kit model *********************************
+        // Multiple object detection in static images
+        ObjectDetectorOptions options =
+                new ObjectDetectorOptions.Builder()
+                        .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
+                        .enableMultipleObjects()
+                        .enableClassification()  // Optional
+                        .build();
+
+
+        trackerProcessor = new ObjectTrackerProcessor(this, options);
+    }
+
+    private View circle1, circle2, circle3, circle4;
+    private void initializeSurface() {
+        graphicOverlay.roadLine.initializeCircles(circle1, circle2, circle3, circle4);
+        findViewById(R.id.changBtn).setVisibility(View.VISIBLE);
+    }
+    static int state = 1;
+    static final int STATE = 3;
+    public void changeCircles(android.view.View view){
+        switch (state){
+            case 0:
+                RoadLine.setCirclesTop(circle1, circle2, circle3, circle4);
+                break;
+            case 1:
+                RoadLine.setCirclesSide1(circle1, circle2, circle3, circle4);
+                break;
+            case 2:
+                RoadLine.setCirclesSide2(circle1, circle2, circle3, circle4);
+                break;
+        }
+        state = (state + 1) % STATE;
+    }
+    private void initializeCircles() {
+        circle1 = findViewById(R.id.circle1);
+        circle2 = findViewById(R.id.circle2);
+        circle3 = findViewById(R.id.circle3);
+        circle4 = findViewById(R.id.circle4);
+
+        circle1.setOnTouchListener(this);
+        circle2.setOnTouchListener(this);
+        circle3.setOnTouchListener(this);
+        circle4.setOnTouchListener(this);
+    }
+    @SuppressLint("ClickableViewAccessibility")
+    @Override
+    public boolean onTouch(View v, MotionEvent event) {
+        if (event.getAction() == MotionEvent.ACTION_MOVE)
+            graphicOverlay.roadLine.movePoint(v, event);
+//        if (graphicOverlay.show(true))
+//            findViewById(R.id.floatingActionButton).setVisibility(View.VISIBLE);
+        return true;
     }
     Interpreter interpreter;
+    private static String outCSVPath = "/sdcard/Download/out.csv";
     private void setupFileChooser() {
         fileChooser = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
-                    String path = getRealPathFromURI(MainActivity.this, uri);
-                    if (path == null) {
-                        path = MainActivity.inVideoPath;
-                        Toast.makeText(getApplicationContext(),
-                                "Failed to get the file path",
-                                Toast.LENGTH_LONG).show();
-                    }
-                    if(new File(path).exists())
-                        MainActivity.inVideoPath = path;
-                    String[] paths = MainActivity.inVideoPath.split("/");
-                    paths[paths.length-1] = "output.mp4";
-                    MainActivity.outVideoPath = String.join("/", paths);
+                    String path = getRealPathFromURI(this, uri);
+                    if (path == null)
+                        path = inVideoPath;
+                    if (new File(path).exists())
+                        inVideoPath = path;
+
+                    String[] paths = inVideoPath.split("/");
+                    paths[paths.length - 1] = "output.mp4";
+                    outVideoPath = String.join("/", paths);
+
+                    paths[paths.length - 1] = "output.csv";
+                    outCSVPath = String.join("/", paths);
+
+
                     Toast.makeText(getApplicationContext(),
                             "out_path: " + outVideoPath,
                             Toast.LENGTH_LONG).show();
                     System.out.println(MainActivity.inVideoPath);
+                    System.out.println(outCSVPath);
 
-                    startProcessingVideo();
+                    // Start updating frames periodically
+                    findViewById(R.id.saveBtn).setVisibility(View.VISIBLE);
+                    findViewById(R.id.browseBtn).setVisibility(View.GONE);
+
+                    initializeSurface();
+                    startProcess();
+
+//                    startProcessingVideo();
                 }
         );
     }
@@ -240,49 +315,6 @@ public class MainActivity extends AppCompatActivity {
         return filePath;
     }
 
-    private void startProcessingVideo() {
-        // Release resources
-        if (cap != null && cap.isOpened())
-            cap.release();
-        if (out != null && out.isOpened())
-            out.release();
-
-        cap = new VideoCapture();
-        cap.open(inVideoPath);
-        int fourcc = VideoWriter.fourcc('m', 'p', '4', 'v');
-        double fps = cap.get(Videoio.CAP_PROP_FPS);
-        int width = (int) cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
-        int height = (int) cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
-        out = new VideoWriter(outVideoPath, fourcc, fps, new Size(width, height));
-        Mat frame = new Mat();
-        if (cap.read(frame)) {
-            if (!frame.empty()) {
-                bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
-                Utils.matToBitmap(frame, bitmap);
-//                image = InputImage.fromBitmap(bitmap, 0);
-                image = TensorImage.fromBitmap(bitmap);
-                processImage();
-            }
-        }
-
-        finished = false;
-        flag = true;
-        new Thread(() -> {
-            while (!finished) {
-                // Process the frame for object detection
-                if (flag) {
-                    flag = false;
-                    processImage();
-                }
-                try {
-                    Thread.sleep(30);  // Adjust frame rate
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            cap.release();
-        }).start();
-    }
     boolean finished = false, flag = true;
     TensorImage image;
     //    InputImage image;
@@ -357,177 +389,123 @@ public class MainActivity extends AppCompatActivity {
         } else
             finished = true;
     }
-
-    private static ArrayList<DetectedObject> extractObjects(Yolov8nFloat32.Outputs outputs, int width, int height) {
-
-        // Debug: Check raw output tensor
-        TensorBuffer outputBuffer = outputs.getOutputAsTensorBuffer();
-        int[] outputShape = outputBuffer.getShape();
-
-        // Debug: Print raw output data
-        float[] outputData = outputBuffer.getFloatArray();
-
-        final int N = outputShape[2];
-        final float threshold = 0.7f;
-        System.out.println("outputShape = " + Arrays.toString(outputShape));
-        System.out.println("N = " + N);
-        ArrayList<DetectedObject> detectedObjects = new ArrayList<>();
-        float max = 0;
-        int maxi = 0, maxj = 0;
-        for (int j = 0; j < N; j++) {
-            for (int i = 4; i < outputShape[1]; i++) {
-                if (outputData[i * N + j] > max) {
-                    max = outputData[i * N + j];
-                    maxi = i;
-                    maxj = j;
-                }
-//                if (outputData[6 * N + j] > threshold)
-//                    System.out.print(outputData[6 * N + j] + ": {" + outputData[j + 2*N] + ", " + outputData[j + 3*N] + "}, ");
-//                else
-//                    System.out.print(" ");
-            }
-////            System.out.print("\n");
-        }
-        System.out.println("*** maxi, maxj = {" + maxi + ", " + maxj + "} = " + max);
-        for (int i = 0; i < N; i++) {
-            if(outputData[49*N+i] > threshold)
-            {
-//                System.out.println("it is bigger than threshold!");
-                float x = outputData[i];
-                float y = outputData[i + N];
-                float w = outputData[i + 2*N];
-                float h = outputData[i + 3*N];
-                System.out.println("x,y,w,h: " + x + ", " + y + ", " + w + ", " + h);
-                detectedObjects.add(new DetectedObject(
-                                new android.graphics.Rect(
-                                        (int) (x * width),
-                                        (int) (y * height),
-                                        (int) ((x + w) * width),
-                                        (int) ((y + h) * height)
-                                ),
-                                null,
-                                new ArrayList<>()
-                        )
-                );
-                System.out.println("go for next...");
-
-            }
-        }
-        return detectedObjects;
-
-    }
+    public static boolean isBusy = false;
     private void startProcess() {
-        // Release resources
-        if (cap != null && cap.isOpened())
-            cap.release();
-        if (out != null && out.isOpened())
-            out.release();
-        if (scheduledExecutorService != null)
-            scheduledExecutorService.shutdown();
+        releaseResources();
 
-//        cap = new VideoCapture();
-//        cap.open(inVideoPath);
-//        int fourcc = VideoWriter.fourcc('m', 'p', '4', 'v');
-//        double fps = cap.get(Videoio.CAP_PROP_FPS);
-//        int width = (int) cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
-//        int height = (int) cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
-//        out = new VideoWriter(outVideoPath, fourcc, fps, new Size(width, height));
+        initialInOutVideo();
 
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        // Render the frame onto the canvas
+
         Runnable updateFrameTask = () -> {
-            Mat frame = new Mat();
-            boolean ret = cap.read(frame);
-            if (ret) {
-                Bitmap bitmap = matToBitmap(frame);
-                InputImage image = InputImage.fromBitmap(bitmap, 0);
-                trackerProcessor.detectInImage(image);
-            } else
-                onDestroy();
-        };
+            if (!isBusy) {
+//                if (isOutAvailable && graphicOverlay.isValidBitmap)
+//                    out.encodeFrame(graphicOverlay.getBitmap());
 
-        // Schedule the task to run every 33 milliseconds (30 frames per second)
-        scheduledExecutorService.scheduleAtFixedRate(
-                updateFrameTask,
-                0, // Initial delay
-                1, // Period (milliseconds)
-                TimeUnit.MILLISECONDS);
-    }
+                Mat frame = new Mat();
+                boolean ret = cap.read(frame);
+                if (ret) {
+                    Bitmap bitmap = matToBitmap(frame);
 
-    private void startUpdatingFrames() {
-        // Release resources
-        if (MainActivity.cap != null && MainActivity.cap.isOpened())
-            MainActivity.cap.release();
-        if (MainActivity.out != null && MainActivity.out.isOpened())
-            MainActivity.out.release();
+                    if (frameNum == 0)
+                        initialParameters(bitmap);
 
-        MainActivity.cap = new VideoCapture();
-        MainActivity.cap.open(MainActivity.inVideoPath);
-        int fourcc = VideoWriter.fourcc('m', 'p', '4', 'v');
-        double fps = MainActivity.cap.get(Videoio.CAP_PROP_FPS);
-        int width = (int) MainActivity.cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
-        int height = (int) MainActivity.cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
-        MainActivity.out = new VideoWriter(MainActivity.outVideoPath, fourcc, fps, new Size(width, height));
-
-        scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-        // Render the frame onto the canvas
-        Runnable updateFrameTask = () -> {
-            Mat frame;
-            if (((Switch)(findViewById(R.id.plateSw))).isChecked())
-                frame = predictAndVisualize(); // TODO
-            else
-                frame = predictWithoutPlate(((Switch)(findViewById(R.id.sideViewSw))).isChecked());
-            System.out.println("activated:" + ((Switch)(findViewById(R.id.plateSw))).isChecked());
-            if (frame != null) {
-                if (((Switch)(findViewById(R.id.saveSw))).isChecked())
+                    frameNum++;
                     try {
-                        MainActivity.out.write(frame);
+                        isBusy = true;
+                        trackerProcessor.processBitmap(bitmap, graphicOverlay);
                     } catch (Exception e) {
-                        System.out.println(e.toString());
-                        ((Switch)(findViewById(R.id.saveSw))).setChecked(false);
-                        Toast.makeText(getApplicationContext(),
-                                "failed to save output",
-                                Toast.LENGTH_LONG).show();
+                        Log.e(TAG, "Failed to process image. Error: " + e.getLocalizedMessage());
+                        Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT)
+                                .show();
                     }
-                Canvas canvas = surfaceView.getHolder().lockCanvas();
-                if (canvas != null) {
-                    // Render the frame onto the canvas
-                    // Ensure you have a valid 'frame' variable holding the current frame
-                    int w = canvas.getWidth();
-                    int h = canvas.getHeight();
-                    Matrix matrix = new Matrix();
-                    matrix.postRotate(90);
-                    Bitmap scaledBitmap = Bitmap.createScaledBitmap(matToBitmap(frame), h, w, false);
-                    Bitmap rotatedBitmap = Bitmap.createBitmap(scaledBitmap, 0, 0, h, w, matrix, true);
-                    canvas.drawBitmap(rotatedBitmap, 0, 0, null);
-                    surfaceView.getHolder().unlockCanvasAndPost(canvas);
-                }
-            } else
-                onDestroy();
+                } else
+                    onDestroy();
+            }
         };
 
         // Schedule the task to run every 33 milliseconds (30 frames per second)
         scheduledExecutorService.scheduleAtFixedRate(
                 updateFrameTask,
                 0, // Initial delay
-                1, // Period (milliseconds)
+                20, // Period (milliseconds)
                 TimeUnit.MILLISECONDS);
     }
+    private void initialParameters(Bitmap bitmap) {
+        graphicOverlay.setImageSourceInfo(bitmap.getWidth(), bitmap.getHeight(), false);
+//        trackerProcessor.DISTANCE_TH = (double) bitmap.getWidth() / 10;
+        MyDetectedObject.imgWidth = bitmap.getWidth();
+        MyDetectedObject.imgHeight = bitmap.getHeight();
+    }
+    private static String outCSVFileName = "out.csv";
+    public void saveCsv(View view) {
+        HashMap<Integer, HashMap<Integer, Float>> ObjectsSpeed = MyDetectedObject.getObjectsSpeed();
+        Set<Integer> unnecessaryKey = new HashSet<>();
+        for (Integer key : ObjectsSpeed.keySet()) {
+            if (Objects.requireNonNull(ObjectsSpeed.get(key)).isEmpty())
+                unnecessaryKey.add(key);
+        }
 
+        for (Integer key : unnecessaryKey) {
+            ObjectsSpeed.remove(key);
+        }
+        try {
+            File file = new File(this.getExternalFilesDir(null), outCSVFileName);
+            CsvWriter.saveHashMapToCsv(ObjectsSpeed, file.getPath());
+            Toast.makeText(getApplicationContext(),
+                    "out_path: " + file.getPath(),
+                    Toast.LENGTH_LONG).show();
+        } catch (Exception e) {
+            Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_LONG)
+                    .show();
+        }
+    }
     @Override
     protected void onDestroy() {
         super.onDestroy();
         // Release resources
         if (MainActivity.cap != null && MainActivity.cap.isOpened())
             MainActivity.cap.release();
-        if (MainActivity.out != null && MainActivity.out.isOpened())
-            MainActivity.out.release();
+        if (out != null && out.isMuxerStarted())
+            out.stopEncoder();
 
         if (scheduledExecutorService != null) {
             scheduledExecutorService.shutdown();
         }
     }
 
+    private void releaseResources() {
+        // Release resources
+        if (cap != null && cap.isOpened())
+            cap.release();
+        if (out != null && out.isMuxerStarted())
+            out.stopEncoder();
+        if (scheduledExecutorService != null)
+            scheduledExecutorService.shutdown();
+    }
+
+    private static String outVideoFileName = "out.mp4";
+    private void initialInOutVideo() {
+        cap = new VideoCapture();
+        cap.open(inVideoPath);
+
+        double fps = cap.get(Videoio.CAP_PROP_FPS);
+        int width = (int) cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
+        int height = (int) cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
+
+        try {
+            File file = new File(this.getExternalFilesDir(null), outVideoFileName);
+            out = new MyVideoEncoder(width, height, (int) fps, file.getPath());
+            out.startEncoder();
+//            isOutAvailable = true;
+        } catch (IOException e) {
+            Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT)
+                    .show();
+        }
+        frameNum = 0;
+
+//        RoadLine.globalCoeff *= (float) (fps / 30);
+    }
 
     public void browseVideo(android.view.View view) {
         fileChooser.launch("video/*");

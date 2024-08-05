@@ -6,6 +6,7 @@ import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
 import android.util.Log;
+
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -17,10 +18,8 @@ import java.util.Map;
 public final class TemperatureMonitor implements SensorEventListener {
 
   private static final String TAG = "TemperatureMonitor";
-
-  public Map<String, Float> sensorReadingsCelsius = new HashMap<>();
-
   private final SensorManager sensorManager;
+  public Map<String, Float> sensorReadingsCelsius = new HashMap<>();
 
   public TemperatureMonitor(Context context) {
     sensorManager = (SensorManager) context.getSystemService(Context.SENSOR_SERVICE);
@@ -55,7 +54,8 @@ public final class TemperatureMonitor implements SensorEventListener {
   }
 
   @Override
-  public void onAccuracyChanged(Sensor sensor, int accuracy) {}
+  public void onAccuracyChanged(Sensor sensor, int accuracy) {
+  }
 
   @Override
   public void onSensorChanged(SensorEvent sensorEvent) {

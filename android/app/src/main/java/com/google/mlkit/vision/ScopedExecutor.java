@@ -40,13 +40,13 @@ public class ScopedExecutor implements Executor {
       return;
     }
     executor.execute(
-        () -> {
-          // Check again in case it has been shut down in the mean time.
-          if (shutdown.get()) {
-            return;
-          }
-          command.run();
-        });
+            () -> {
+              // Check again in case it has been shut down in the mean time.
+              if (shutdown.get()) {
+                return;
+              }
+              command.run();
+            });
   }
 
   /**

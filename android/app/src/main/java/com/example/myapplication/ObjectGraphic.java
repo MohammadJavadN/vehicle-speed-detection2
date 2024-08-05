@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package com.example.myapplication;
 
+import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
@@ -25,36 +25,42 @@ import com.google.mlkit.vision.GraphicOverlay.Graphic;
 import com.google.mlkit.vision.GraphicOverlay;
 import com.google.mlkit.vision.objects.DetectedObject;
 import com.google.mlkit.vision.objects.DetectedObject.Label;
+
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+
 import java.util.Locale;
 
-/** Draw the detected object info in preview. */
+/**
+ * Draw the detected object info in preview.
+ */
 public class ObjectGraphic extends Graphic {
 
-  private static final float TEXT_SIZE = 54.0f;
+  private static final float TEXT_SIZE = 30.0f;
   private static final float STROKE_WIDTH = 4.0f;
   private static final int NUM_COLORS = 10;
   private static final int[][] COLORS =
-      new int[][] {
-        // {Text color, background color}
-        {Color.BLACK, Color.WHITE},
-        {Color.WHITE, Color.MAGENTA},
-        {Color.BLACK, Color.LTGRAY},
-        {Color.WHITE, Color.RED},
-        {Color.WHITE, Color.BLUE},
-        {Color.WHITE, Color.DKGRAY},
-        {Color.BLACK, Color.CYAN},
-        {Color.BLACK, Color.YELLOW},
-        {Color.WHITE, Color.BLACK},
-        {Color.BLACK, Color.GREEN}
-      };
+          new int[][]{
+                  // {Text color, background color}
+                  {Color.BLACK, Color.WHITE},
+                  {Color.WHITE, Color.MAGENTA},
+                  {Color.BLACK, Color.LTGRAY},
+                  {Color.WHITE, Color.RED},
+                  {Color.WHITE, Color.BLUE},
+                  {Color.WHITE, Color.DKGRAY},
+                  {Color.BLACK, Color.CYAN},
+                  {Color.BLACK, Color.YELLOW},
+                  {Color.WHITE, Color.BLACK},
+                  {Color.BLACK, Color.GREEN}
+          };
   private static final String LABEL_FORMAT = "%.2f%% confidence (index: %d)";
 
-  private final DetectedObject object;
+  private final MyDetectedObject object;
   private final Paint[] boxPaints;
   private final Paint[] textPaints;
   private final Paint[] labelPaints;
 
-  public ObjectGraphic(GraphicOverlay overlay, DetectedObject object) {
+  public ObjectGraphic(GraphicOverlay overlay, MyDetectedObject object) {
     super(overlay);
 
     this.object = object;
@@ -83,8 +89,8 @@ public class ObjectGraphic extends Graphic {
   public void draw(Canvas canvas) {
     // Decide color based on object tracking ID
     int colorID =
-        object.getTrackingId() == null ? 0 : Math.abs(object.getTrackingId() % NUM_COLORS);
-    float textWidth = textPaints[colorID].measureText("Tracking ID: " + object.getTrackingId());
+            object.getTrackingId() == null ? 0 : Math.abs(object.getTrackingId() % NUM_COLORS);
+    float textWidth = textPaints[colorID].measureText("ID: " + object.getTrackingId() + ", Speed: " + ((int) object.getSpeed()));
     float lineHeight = TEXT_SIZE + STROKE_WIDTH;
     float yLabelOffset = -lineHeight;
 
@@ -92,48 +98,46 @@ public class ObjectGraphic extends Graphic {
     for (Label label : object.getLabels()) {
       textWidth = Math.max(textWidth, textPaints[colorID].measureText(label.getText()));
       textWidth =
-          Math.max(
-              textWidth,
-              textPaints[colorID].measureText(
-                  String.format(
-                      Locale.US, LABEL_FORMAT, label.getConfidence() * 100, label.getIndex())));
+              Math.max(
+                      textWidth,
+                      textPaints[colorID].measureText(
+                              String.format(
+                                      Locale.US, LABEL_FORMAT, label.getConfidence() * 100, label.getIndex())));
       yLabelOffset -= 2 * lineHeight;
     }
 
-    // Draws the bounding box.
     RectF rect = new RectF(object.getBoundingBox());
-    // If the image is flipped, the left will be translated to right, and the right to left.
-    float x0 = translateX(rect.left);
-    float x1 = translateX(rect.right);
+
+    float x0 = rect.left;
+    float x1 = rect.right;
     rect.left = Math.min(x0, x1);
     rect.right = Math.max(x0, x1);
-    rect.top = translateY(rect.top);
-    rect.bottom = translateY(rect.bottom);
+
     canvas.drawRect(rect, boxPaints[colorID]);
 
     // Draws other object info.
     canvas.drawRect(
-        rect.left - STROKE_WIDTH,
-        rect.top + yLabelOffset,
-        rect.left + textWidth + (2 * STROKE_WIDTH),
-        rect.top,
-        labelPaints[colorID]);
+            rect.left - STROKE_WIDTH,
+            rect.top + yLabelOffset,
+            rect.left + textWidth + (2 * STROKE_WIDTH),
+            rect.top,
+            labelPaints[colorID]);
     yLabelOffset += TEXT_SIZE;
     canvas.drawText(
-        "Tracking ID: " + object.getTrackingId(),
-        rect.left,
-        rect.top + yLabelOffset,
-        textPaints[colorID]);
+            "ID: " + object.getTrackingId() + ", Speed: " + ((int) object.getSpeed()),
+            rect.left,
+            rect.top + yLabelOffset,
+            textPaints[colorID]);
     yLabelOffset += lineHeight;
 
     for (Label label : object.getLabels()) {
       canvas.drawText(label.getText(), rect.left, rect.top + yLabelOffset, textPaints[colorID]);
       yLabelOffset += lineHeight;
       canvas.drawText(
-          String.format(Locale.US, LABEL_FORMAT, label.getConfidence() * 100, label.getIndex()),
-          rect.left,
-          rect.top + yLabelOffset,
-          textPaints[colorID]);
+              String.format(Locale.US, LABEL_FORMAT, label.getConfidence() * 100, label.getIndex()),
+              rect.left,
+              rect.top + yLabelOffset,
+              textPaints[colorID]);
 
       yLabelOffset += lineHeight;
     }

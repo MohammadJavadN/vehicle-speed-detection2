@@ -17,31 +17,43 @@
         android:layout_margin="20dp"
         />
 
-    <SurfaceView
-        android:id="@+id/surfaceView"
+<!--    <SurfaceView-->
+<!--        android:id="@+id/surfaceView"-->
+<!--        android:layout_width="wrap_content"-->
+<!--        android:layout_height="wrap_content"-->
+<!--        android:layout_below="@+id/browseBtn"-->
+<!--        android:layout_centerHorizontal="true"-->
+<!--        android:layout_margin="20dp"-->
+<!--        android:onClick="browseVideo"-->
+<!--        />-->
+
+
+    <com.google.mlkit.vision.GraphicOverlay
+        android:id="@+id/overlayView"
+        android:layout_width="288dp"
+        android:layout_height="516dp"
+        android:layout_below="@+id/browseBtn"
+        android:layout_alignParentBottom="true"
+        android:layout_centerHorizontal="true"
+        android:layout_marginStart="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginTop="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="60dp"
+        android:scaleType="fitXY" />
+
+    <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/browseBtn"
+        android:text="@string/save"
+        android:layout_below="@id/title"
+        android:id="@+id/saveBtn"
+        android:layout_marginTop="10dp"
         android:layout_centerHorizontal="true"
-        android:layout_margin="20dp"
-        android:onClick="browseVideo"
-        />
+        android:onClick="saveCsv"
+        android:visibility="invisible"/>
 
-
-<!--    <com.google.mlkit.vision.GraphicOverlay-->
-<!--        android:id="@+id/overlayView"-->
-<!--        android:layout_width="288dp"-->
-<!--        android:layout_height="516dp"-->
-<!--        android:layout_below="@+id/browseBtn"-->
-<!--        android:layout_alignParentBottom="true"-->
-<!--        android:layout_centerHorizontal="true"-->
-<!--        android:layout_marginStart="20dp"-->
-<!--        android:layout_marginLeft="20dp"-->
-<!--        android:layout_marginTop="20dp"-->
-<!--        android:layout_marginEnd="20dp"-->
-<!--        android:layout_marginRight="20dp"-->
-<!--        android:layout_marginBottom="60dp"-->
-<!--        android:scaleType="fitXY" />-->
 
     <Button
         android:layout_width="wrap_content"
@@ -85,4 +97,60 @@
         android:text="sideView"
         android:layout_marginLeft="10dp"
         tools:ignore="UseSwitchCompatOrMaterialXml" />
+
+    <View
+        android:id="@+id/circle1"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_alignStart="@+id/overlayView"
+        android:layout_alignTop="@+id/overlayView"
+        android:layout_marginStart="263dp"
+        android:layout_marginTop="308dp"
+        android:background="@drawable/circle_shape"
+        android:visibility="invisible" />
+
+    <View
+        android:id="@+id/circle2"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_alignStart="@+id/overlayView"
+        android:layout_alignTop="@+id/overlayView"
+        android:layout_marginStart="312dp"
+        android:layout_marginTop="406dp"
+        android:background="@drawable/circle_shape"
+        android:visibility="invisible" />
+
+    <View
+        android:id="@+id/circle3"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_alignStart="@+id/overlayView"
+        android:layout_alignTop="@+id/overlayView"
+        android:layout_marginStart="32dp"
+        android:layout_marginTop="352dp"
+        android:background="@drawable/circle_shape"
+        android:visibility="invisible" />
+
+    <View
+        android:id="@+id/circle4"
+        android:layout_width="25dp"
+        android:layout_height="25dp"
+        android:layout_alignStart="@+id/overlayView"
+        android:layout_alignTop="@+id/overlayView"
+        android:layout_marginStart="102dp"
+        android:layout_marginTop="453dp"
+        android:background="@drawable/circle_shape"
+        android:visibility="invisible" />
+
+    <Button
+        android:id="@+id/changBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/title"
+        android:layout_marginTop="10dp"
+        android:layout_marginEnd="34dp"
+        android:layout_toStartOf="@+id/saveBtn"
+        android:onClick="changeCircles"
+        android:text="@string/change_circles"
+        android:visibility="invisible"/>
 </RelativeLayout>

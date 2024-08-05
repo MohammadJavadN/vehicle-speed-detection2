@@ -29,6 +29,7 @@ import android.net.Uri;
 import android.os.Build.VERSION_CODES;
 import android.provider.MediaStore;
 import android.util.Log;
+
 import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 //import androidx.camera.core.ExperimentalGetImage;
@@ -43,11 +44,15 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
 
-/** Utils functions for bitmap conversions. */
+/**
+ * Utils functions for bitmap conversions.
+ */
 public class BitmapUtils {
   private static final String TAG = "BitmapUtils";
 
-  /** Converts NV21 format byte buffer to bitmap. */
+  /**
+   * Converts NV21 format byte buffer to bitmap.
+   */
   @Nullable
   public static Bitmap getBitmap(ByteBuffer data, FrameMetadata metadata) {
     data.rewind();
@@ -55,8 +60,8 @@ public class BitmapUtils {
     data.get(imageInBuffer, 0, imageInBuffer.length);
     try {
       YuvImage image =
-          new YuvImage(
-              imageInBuffer, ImageFormat.NV21, metadata.getWidth(), metadata.getHeight(), null);
+              new YuvImage(
+                      imageInBuffer, ImageFormat.NV21, metadata.getWidth(), metadata.getHeight(), null);
       ByteArrayOutputStream stream = new ByteArrayOutputStream();
       image.compressToJpeg(new Rect(0, 0, metadata.getWidth(), metadata.getHeight()), 80, stream);
 
@@ -69,6 +74,7 @@ public class BitmapUtils {
     }
     return null;
   }
+
   public static Bitmap matToBitmap(Mat inputMat) {
     System.out.println("%%%" + inputMat.cols() + inputMat.rows());
     Bitmap outputBitmap = Bitmap.createBitmap(inputMat.cols(), inputMat.rows(), Bitmap.Config.ARGB_8888);
@@ -76,26 +82,11 @@ public class BitmapUtils {
     return outputBitmap;
   }
 
-  /** Converts a YUV_420_888 image from CameraX API to a bitmap. */
-//  @RequiresApi(VERSION_CODES.LOLLIPOP)
-//  @Nullable
-//  @ExperimentalGetImage
-//  public static Bitmap getBitmap(ImageProxy image) {
-//    FrameMetadata frameMetadata =
-//        new FrameMetadata.Builder()
-//            .setWidth(image.getWidth())
-//            .setHeight(image.getHeight())
-//            .setRotation(image.getImageInfo().getRotationDegrees())
-//            .build();
-//
-//    ByteBuffer nv21Buffer =
-//        yuv420ThreePlanesToNV21(image.getImage().getPlanes(), image.getWidth(), image.getHeight());
-//    return getBitmap(nv21Buffer, frameMetadata);
-//  }
-
-  /** Rotates a bitmap if it is converted from a bytebuffer. */
+  /**
+   * Rotates a bitmap if it is converted from a bytebuffer.
+   */
   private static Bitmap rotateBitmap(
-      Bitmap bitmap, int rotationDegrees, boolean flipX, boolean flipY) {
+          Bitmap bitmap, int rotationDegrees, boolean flipX, boolean flipY) {
     Matrix matrix = new Matrix();
 
     // Rotate the image back to straight.
@@ -104,7 +95,7 @@ public class BitmapUtils {
     // Mirror the image along the X or Y axis.
     matrix.postScale(flipX ? -1.0f : 1.0f, flipY ? -1.0f : 1.0f);
     Bitmap rotatedBitmap =
-        Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
+            Bitmap.createBitmap(bitmap, 0, 0, bitmap.getWidth(), bitmap.getHeight(), matrix, true);
 
     // Recycle the old bitmap if it has changed.
     if (rotatedBitmap != bitmap) {
@@ -115,7 +106,7 @@ public class BitmapUtils {
 
   @Nullable
   public static Bitmap getBitmapFromContentUri(ContentResolver contentResolver, Uri imageUri)
-      throws IOException {
+          throws IOException {
     Bitmap decodedBitmap = MediaStore.Images.Media.getBitmap(contentResolver, imageUri);
     if (decodedBitmap == null) {
       return null;
@@ -165,7 +156,7 @@ public class BitmapUtils {
     // See also:
     // https://android-developers.googleblog.com/2016/12/introducing-the-exifinterface-support-library.html
     if (!ContentResolver.SCHEME_CONTENT.equals(imageUri.getScheme())
-        && !ContentResolver.SCHEME_FILE.equals(imageUri.getScheme())) {
+            && !ContentResolver.SCHEME_FILE.equals(imageUri.getScheme())) {
       return 0;
     }
 
@@ -202,7 +193,7 @@ public class BitmapUtils {
    * them to the NV21 array.
    */
   private static ByteBuffer yuv420ThreePlanesToNV21(
-      Plane[] yuv420888planes, int width, int height) {
+          Plane[] yuv420888planes, int width, int height) {
     int imageSize = width * height;
     byte[] out = new byte[imageSize + 2 * (imageSize / 4)];
 
@@ -229,7 +220,9 @@ public class BitmapUtils {
     return ByteBuffer.wrap(out);
   }
 
-  /** Checks if the UV plane buffers of a YUV_420_888 image are in the NV21 format. */
+  /**
+   * Checks if the UV plane buffers of a YUV_420_888 image are in the NV21 format.
+   */
   private static boolean areUVPlanesNV21(Plane[] planes, int width, int height) {
     int imageSize = width * height;
 
@@ -247,7 +240,7 @@ public class BitmapUtils {
 
     // Check that the buffers are equal and have the expected number of elements.
     boolean areNV21 =
-        (vBuffer.remaining() == (2 * imageSize / 4 - 2)) && (vBuffer.compareTo(uBuffer) == 0);
+            (vBuffer.remaining() == (2 * imageSize / 4 - 2)) && (vBuffer.compareTo(uBuffer) == 0);
 
     // Restore buffers to their initial state.
     vBuffer.position(vBufferPosition);
@@ -263,7 +256,7 @@ public class BitmapUtils {
    * spaced by 'pixelStride'. Note that there is no row padding on the output.
    */
   private static void unpackPlane(
-      Plane plane, int width, int height, byte[] out, int offset, int pixelStride) {
+          Plane plane, int width, int height, byte[] out, int offset, int pixelStride) {
     ByteBuffer buffer = plane.getBuffer();
     buffer.rewind();
 
