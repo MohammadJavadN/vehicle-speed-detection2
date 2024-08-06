@@ -205,7 +205,7 @@ public class GraphicOverlay extends View {
       for (Graphic graphic : graphics) {
         graphic.draw(canvasForFrame);
       }
-      roadLine.drawLines(canvasForFrame);
+//      roadLine.drawLines(canvasForFrame); todo: uncomment
 
       isValidBitmap = true;
 
