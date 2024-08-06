@@ -98,8 +98,8 @@ public class RoadLine {
 
         updateParameters();
 
-        setVisible(View.VISIBLE);
-//        setVisible(View.GONE);
+//        setVisible(View.VISIBLE); // todo: uncomment
+        setVisible(View.GONE);
     }
 
     public void updateParameters() {

@@ -30,9 +30,9 @@
 
     <com.google.mlkit.vision.GraphicOverlay
         android:id="@+id/overlayView"
-        android:layout_width="288dp"
-        android:layout_height="516dp"
-        android:layout_below="@+id/browseBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/saveBtn"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginStart="20dp"
