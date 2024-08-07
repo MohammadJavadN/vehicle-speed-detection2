@@ -24,21 +24,24 @@ import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
-public class TOFSpeedDetector {
+public class TOFSpeedDetector  {
 
     final static int fq = 6;
     final static int ff = 4;
     final static int ptsNum = 50;
-    private static final Size WIN_SIZE = new Size(10, 10);
-    private static final TermCriteria CRITERIA = new TermCriteria(TermCriteria.COUNT + TermCriteria.EPS,
-            200,
-            0.001);
+    private static final Size WIN_SIZE = new Size(100, 40);
+    private static final TermCriteria CRITERIA = new TermCriteria(TermCriteria.COUNT | TermCriteria.EPS,
+            10,
+            0.003);
+    private static final int MAX_LEVEL = 10;
     private static final int MAX_CORNERS = 20;
     private final TensorBuffer speedInputFeature;
     private final List<Mat> frames;
+    private final List<Bitmap> bitmaps;
     private final List<List<DetectedObject>> listOfObjList;
     private final SpeedPredictionModel speedPredictionModel;
     private final Paint rectPaint;
@@ -52,6 +55,11 @@ public class TOFSpeedDetector {
         frames = new ArrayList<>(fq);
         for (int i = 0; i < fq; i++) {
             frames.add(new Mat());
+        }
+
+        bitmaps = new ArrayList<>(fq);
+        for (int i = 0; i < fq; i++) {
+            bitmaps.add(null);
         }
 
         listOfObjList = new ArrayList<>(fq);
@@ -119,7 +127,7 @@ public class TOFSpeedDetector {
 
             List<Point> prevPts = new ArrayList<>();
             for (int i = 0; i < ptsNum; i++) {
-                double x = random.nextInt(bBox.width) + bBox.tl().y;
+                double x = random.nextInt(bBox.width) + bBox.tl().x;
                 double y = random.nextInt(bBox.height) + bBox.tl().y;
                 prevPts.add(new Point(x, y));
             }
@@ -144,7 +152,7 @@ public class TOFSpeedDetector {
 
                 MatOfPoint2f nextPts = new MatOfPoint2f();
                 Video.calcOpticalFlowPyrLK(
-                        prevGray, frameGray, prevPtsMat, nextPts, status, errors, WIN_SIZE, 5, CRITERIA);
+                        prevGray, frameGray, prevPtsMat, nextPts, status, errors, WIN_SIZE, MAX_LEVEL, CRITERIA);
 
                 if (!errors.empty()) {
                     float[] errorsArray = errors.toArray();
@@ -197,6 +205,118 @@ public class TOFSpeedDetector {
 
         }
 
+    }
+
+    public Bitmap dest;
+    public List<DetectedObject> detectSpeeds(
+            Bitmap originalCameraImage,
+            List<DetectedObject> detectedObjects
+    ) {
+
+        Mat frame = new Mat();
+        Utils.bitmapToMat(originalCameraImage, frame);
+
+        frames.set(frameNum % fq, frame.clone());
+        bitmaps.set(frameNum % fq, originalCameraImage.copy(originalCameraImage.getConfig(), true));
+        listOfObjList.set(frameNum % fq, new ArrayList<>(detectedObjects));
+        frameNum++;
+
+        if (frameNum < fq) {
+            dest = originalCameraImage;
+            return detectedObjects;
+        }
+        dest = bitmaps.get((frameNum - fq) % fq);
+        List<DetectedObject> detectedObjectsOut = new ArrayList<>(detectedObjects.size());
+
+        for (DetectedObject object : listOfObjList.get((frameNum - fq) % fq)) {
+            Rect bBox = new Rect(object.getBoundingBox().left, object.getBoundingBox().top,
+                    object.getBoundingBox().right, object.getBoundingBox().bottom);
+
+            Random random = new Random();
+
+            List<Point> prevPts = new ArrayList<>();
+            for (int i = 0; i < ptsNum; i++) {
+                double x = random.nextInt(bBox.width) + bBox.tl().x;
+                double y = random.nextInt(bBox.height) + bBox.tl().y;
+                prevPts.add(new Point(x, y));
+            }
+
+            Mat prevGray = new Mat();
+            Imgproc.cvtColor(frames.get((frameNum - fq) % fq), prevGray, Imgproc.COLOR_BGR2GRAY);
+
+            MatOfPoint2f prevPtsMat = new MatOfPoint2f();
+            prevPtsMat.fromList(prevPts);
+
+            MatOfByte status = new MatOfByte();
+            MatOfFloat errors = new MatOfFloat();
+
+            // Calculate optical flow
+            List<Double> distances = new ArrayList<>();
+            distances.add((double) Math.abs(bBox.width));
+            distances.add((double) Math.abs(bBox.height));
+
+            for (int i = ff; i < fq - 1; i++) {
+                Mat frameGray = new Mat();
+                Imgproc.cvtColor(frames.get((frameNum - fq + i + 1) % fq), frameGray, Imgproc.COLOR_BGR2GRAY);
+
+                MatOfPoint2f nextPts = new MatOfPoint2f();
+                Video.calcOpticalFlowPyrLK(
+                        prevGray, frameGray, prevPtsMat, nextPts, status, errors, WIN_SIZE, MAX_LEVEL, CRITERIA);
+
+                if (!errors.empty()) {
+                    float[] errorsArray = errors.toArray();
+                    int[] sortedIndices = sortIndices(errorsArray);
+
+                    // Get indices of top 20 best points
+                    int[] top20Indices = new int[Math.min(MAX_CORNERS, sortedIndices.length)];
+                    System.arraycopy(sortedIndices, 0, top20Indices, 0, top20Indices.length);
+
+                    List<Point> bestPrevPts = new ArrayList<>();
+                    List<Point> bestNextPts = new ArrayList<>();
+                    for (int index : top20Indices) {
+                        bestPrevPts.add(prevPtsMat.toList().get(index));
+                        bestNextPts.add(nextPts.toList().get(index));
+                    }
+
+                    // Normalize points
+                    Point minV = new Point(-1, -1);
+                    Point maxV = new Point(-1, -1);
+                    List<Point> prevPtsNormalized = normalizePoints(bestPrevPts, minV, maxV);
+                    List<Point> nextPtsNormalized = normalizePoints(bestNextPts, minV, maxV);
+
+                    // Calculate Euclidean distances
+                    for (int j = 0; j < bestPrevPts.size(); j++) {
+                        Point prevPt = prevPtsNormalized.get(j);
+                        Point nextPt = nextPtsNormalized.get(j);
+                        double distance = Math.sqrt(Math.pow(prevPt.x - nextPt.x, 2) + Math.pow(prevPt.y - nextPt.y, 2));
+                        distances.add(distance);
+                    }
+                }
+            }
+
+            double[] input_data = listToArray(distances);
+            System.out.println(Arrays.toString(input_data));
+
+            // Get output tensor (predicted_speed_function)
+            float predictedSpeed = predictSpeed(input_data);
+
+            int speed = (int) predictedSpeed;
+
+            List<DetectedObject.Label> labels = object.getLabels();
+            if (labels == null)
+                labels = new ArrayList<>();
+            labels.add(new DetectedObject.Label(Float.toString(speed), -1, -1));
+
+            detectedObjectsOut.add(
+                    new DetectedObject(
+                            object.getBoundingBox(),
+                            object.getTrackingId(),
+                            labels
+                    )
+            );
+
+        }
+        return detectedObjectsOut;
     }
 
     public ByteBuffer doubleToByteBuffer(double[] data) {

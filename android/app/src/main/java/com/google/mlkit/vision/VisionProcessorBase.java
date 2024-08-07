@@ -35,6 +35,7 @@ import androidx.annotation.RequiresApi;
 //import androidx.camera.core.ExperimentalGetImage;
 //import androidx.camera.core.ImageProxy;
 import com.example.myapplication.MainActivity;
+import com.example.myapplication.TOFSpeedDetector;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskExecutors;
 import com.google.android.gms.tasks.Tasks;
@@ -52,9 +53,14 @@ import com.google.mlkit.vision.InferenceInfoGraphic;
 import com.google.mlkit.vision.ScopedExecutor;
 //import com.google.mlkit.vision.TemperatureMonitor;
 import com.google.mlkit.vision.VisionImageProcessor;
+import com.google.mlkit.vision.objects.DetectedObject;
 import com.google.mlkit.vision.preference.PreferenceUtils;
 
+import org.opencv.android.Utils;
+import org.opencv.core.Mat;
+
 import java.nio.ByteBuffer;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -104,7 +110,7 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
 
   @GuardedBy("this")
   private FrameMetadata processingMetaData;
-
+  protected TOFSpeedDetector tofSpeedDetector;
   protected VisionProcessorBase(Context context) {
     activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
     executor = new ScopedExecutor(TaskExecutors.MAIN_THREAD);
@@ -288,10 +294,24 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
                       }
 
                       graphicOverlay.clear();
-                      if (originalCameraImage != null) {
-                        graphicOverlay.add(new CameraImageGraphic(graphicOverlay, originalCameraImage));
+//                      if (originalCameraImage != null) {
+//                        graphicOverlay.add(new CameraImageGraphic(graphicOverlay, originalCameraImage));
+//                      }
+
+                      T t = (T) tofSpeedDetector.detectSpeeds(
+                              originalCameraImage,
+                              (List<DetectedObject>) results
+                              );
+
+                      Bitmap dest = tofSpeedDetector.dest;
+                      if (dest != null) {
+                        graphicOverlay.add(new CameraImageGraphic(graphicOverlay, dest));
                       }
-                      VisionProcessorBase.this.onSuccess(results, graphicOverlay);
+                      VisionProcessorBase.this.onSuccess(
+                              t,
+                              graphicOverlay
+                      );
+
                       if (!PreferenceUtils.shouldHideDetectionInfo(graphicOverlay.getContext())) {
                         graphicOverlay.add(
                                 new InferenceInfoGraphic(

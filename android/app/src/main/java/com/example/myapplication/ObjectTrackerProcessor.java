@@ -27,14 +27,15 @@ public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObj
 
     private final ObjectDetector detector;
     private final List<MyDetectedObject> prevObjects;
-    double DISTANCE_TH = 50;
+    double DISTANCE_TH = 1;
     private int frameNum;
 
-    public ObjectTrackerProcessor(Context context, ObjectDetectorOptionsBase options) {
+    public ObjectTrackerProcessor(Context context, ObjectDetectorOptionsBase options, TOFSpeedDetector tof) {
         super(context);
         detector = ObjectDetection.getClient(options);
         frameNum = 0;
         prevObjects = new ArrayList<>();
+        this.tofSpeedDetector = tof;
     }
 
     @Override
@@ -104,7 +105,14 @@ public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObj
     private void updateObj(int id, DetectedObject object) {
         for (MyDetectedObject prevObj : prevObjects) {
             if (prevObj.id == id) {
-                prevObj.updateBoxAndSpeed(object.getBoundingBox(), frameNum);
+//                prevObj.updateBoxAndSpeed(object.getBoundingBox(), frameNum);
+
+                List<DetectedObject.Label> labels = object.getLabels();
+                prevObj.updateBoxAndSpeed(
+                        object.getBoundingBox(),
+                        frameNum,
+                        Float.parseFloat(labels.get(labels.size()-1).getText())
+                );
                 prevObj.frameNum = frameNum;
                 break;
             }
@@ -112,11 +120,22 @@ public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObj
     }
 
     private void addNewObj(DetectedObject object) {
-        prevObjects.add(
-                new MyDetectedObject(
-                        object.getBoundingBox(),
-                        frameNum
-                )
-        );
+        List<DetectedObject.Label> labels = object.getLabels();
+
+        if (labels.isEmpty())
+            prevObjects.add(
+                    new MyDetectedObject(
+                            object.getBoundingBox(),
+                            frameNum
+                    )
+            );
+        else
+            prevObjects.add(
+                    new MyDetectedObject(
+                            object.getBoundingBox(),
+                            frameNum,
+                            Float.parseFloat(labels.get(labels.size()-1).getText())
+                    )
+            );
     }
 }

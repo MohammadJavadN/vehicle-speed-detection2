@@ -33,6 +33,7 @@ public class MyDetectedObject extends DetectedObject {
 
     private final int SPEED_CNT = 15;
     private final Point[] speedVectors = new Point[SPEED_CNT];
+    private final float[] speeds = new float[SPEED_CNT];
     protected RectF location;
     int id = -1;
     int frameNum, frameNumUpdated;
@@ -52,6 +53,17 @@ public class MyDetectedObject extends DetectedObject {
         objectsSpeed.put(id, new HashMap<>());
     }
 
+    public MyDetectedObject(@NonNull Rect boundingBox, int frameNum, float speed) {
+        super(boundingBox, nextId, new ArrayList<>());
+//        this.boundingBox = boundingBox;
+        setLocationInt(boundingBox);
+        id = nextId;
+        this.frameNum = frameNum;
+        this.frameNumUpdated = frameNum;
+        nextId++;
+        objectsSpeed.put(id, new HashMap<>());
+        this.speed = speed;
+    }
     public static HashMap<Integer, HashMap<Integer, Float>> getObjectsSpeed() {
         return objectsSpeed;
     }
@@ -113,6 +125,38 @@ public class MyDetectedObject extends DetectedObject {
         setLocation(newLocation);
 
         Objects.requireNonNull(objectsSpeed.get(id)).put(frameNum, speed);
+        this.frameNumUpdated = frameNum;
+    }
+
+
+    public void updateBoxAndSpeed(Rect box, int frameNum, float speed) {
+        RectF newLocation = new RectF(
+                box.left / imgWidth,
+                box.top / imgHeight,
+                box.right / imgWidth,
+                box.bottom / imgHeight
+        );
+
+        speeds[speedCnt % SPEED_CNT] = speed;
+        speedCnt++;
+        int cnt = min(speedCnt, SPEED_CNT);
+
+        float sumSpeed = 0;
+        for (int i = 0; i < cnt; i++) {
+            sumSpeed = speeds[i];
+        }
+        sumSpeed /= cnt;
+
+        this.speed = min(0, sumSpeed);
+        if (this.speed < 10 || ((int) this.speed) < 20) {
+            speedCnt--;
+            this.speed = speed;
+            return;
+        }
+
+        setLocation(newLocation);
+
+        Objects.requireNonNull(objectsSpeed.get(id)).put(frameNum, this.speed);
         this.frameNumUpdated = frameNum;
     }
 

@@ -185,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         .build();
 
 
-        trackerProcessor = new ObjectTrackerProcessor(this, options);
+        trackerProcessor = new ObjectTrackerProcessor(this, options, tofSpeedDetector);
     }
 
     private View circle1, circle2, circle3, circle4;
