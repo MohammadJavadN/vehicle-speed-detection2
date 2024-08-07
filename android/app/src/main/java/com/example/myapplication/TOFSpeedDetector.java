@@ -342,8 +342,8 @@ public class TOFSpeedDetector  {
     private float predictSpeed(double[] inputData) {
         //>>> from joblib import load
         //>>> sc = load('speed_prediction_model/std_scaler.bin')
-        //>>> formatted_means = ", ".join("{:.6f}".format(value) for value in sc.var_)
-        //>>> formatted_vars = ", ".join("{:.6f}".format(value) for value in sc.mean_)
+        //>>> formatted_means = ", ".join("{:.6f}".format(value) for value in sc.mean_)
+        //>>> formatted_scales = ", ".join("{:.6f}".format(value) for value in sc.scale_)
         //>>> formatted_means
         double[] MEANS = new double[]{
                 367.753784, 294.440142, 0.033945, 0.033927,
@@ -354,17 +354,17 @@ public class TOFSpeedDetector  {
                 0.035046, 0.035158
         };
 
-        double[] VARS = new double[]{
-                16921.964456, 8168.900612, 0.001364, 0.001229,
-                0.001149, 0.001353, 0.001362, 0.001310, 0.001402,
-                0.001564, 0.001258, 0.001300, 0.001260, 0.001649,
-                0.001213, 0.001343, 0.001653, 0.001472, 0.001489,
-                0.001281, 0.001355, 0.001288
+        double[] SCALES = new double[]{
+                130.084451, 90.381971, 0.036939, 0.035064, 0.033901,
+                0.036780, 0.036903, 0.036189, 0.037449, 0.039547,
+                0.035475, 0.036059, 0.035492, 0.040612, 0.034835,
+                0.036642, 0.040652, 0.038372, 0.038593, 0.035797,
+                0.036812, 0.035888
         };
 
-        double[] normalized = new double[VARS.length];
-        for (int i = 0; i < normalized.length; i++) {
-            normalized[i] = (inputData[i] - MEANS[i]) / VARS[i];
+        double[] normalized = new double[SCALES.length];
+        for (int i = 0; i < SCALES.length; i++) {
+            normalized[i] = (inputData[i] - MEANS[i]) / SCALES[i];
         }
 
         speedInputFeature.loadBuffer(doubleToByteBuffer(normalized));
