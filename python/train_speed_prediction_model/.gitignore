@@ -4,3 +4,5 @@ venv/
 # .gitignore
 model/
 models/
+test.csv
+test.xls

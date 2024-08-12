@@ -40,7 +40,7 @@ def parse_json(json_path):
     return vehicles
 
 
-js_path = 'FILE0002.json'
+js_path = '../../videos/FILE0010.json'
 vid_path = js_path.replace('json', 'ASF')
 out_path = js_path.replace('json', 'MP4')
 
@@ -52,6 +52,7 @@ width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
 height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
 out = cv2.VideoWriter(out_path, fourcc, fps, (width, height))
 
+label = ""
 iframe = 0
 while True:
     ret, frame = cap.read()
@@ -76,7 +77,7 @@ while True:
 
         # Draw the text on the frame
         cv2.putText(frame, label, (label_x, label_y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
-    else:
-        cv2.putText(frame, label, (label_x, label_y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
+    # else:
+    #     cv2.putText(frame, label, (label_x, label_y), cv2.FONT_HERSHEY_SIMPLEX, 2, (0, 255, 0), 2)
 
     out.write(frame)

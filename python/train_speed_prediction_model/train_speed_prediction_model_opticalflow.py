@@ -74,6 +74,38 @@ def normalize_points(points, minv=None, maxv=None):
     return norm_points, min_val, max_val
 
 
+# Print iterations progress
+def printProgressBar(
+    iteration,
+    total,
+    prefix='',
+    suffix='',
+    decimals=1,
+    length=100,
+    fill='█',
+    printEnd="\r",
+):
+    """
+    Call in a loop to create terminal progress bar
+    @params:
+        iteration   - Required  : current iteration (Int)
+        total       - Required  : total iterations (Int)
+        prefix      - Optional  : prefix string (Str)
+        suffix      - Optional  : suffix string (Str)
+        decimals    - Optional  : positive number of decimals in percent
+        length      - Optional  : character length of bar (Int)
+        fill        - Optional  : bar fill character (Str)
+        printEnd    - Optional  : end character (e.g. "\r", "\r\n") (Str)
+    """
+    percent = ("{0:."+str(decimals)+"f}").format(100*(iteration/float(total)))
+    filledLength = int(length * iteration // total)
+    bar = fill * filledLength + '-' * (length - filledLength)
+    print(f'\r{prefix} |{bar}| {percent}% {suffix}', end=printEnd)
+    # Print New Line on Complete
+    if iteration == total:
+        print()
+
+
 def extract_augmented_data(
     video_paths,
     vehicles,
@@ -82,6 +114,7 @@ def extract_augmented_data(
     fq=3,
     ff=0,
     pts_num=50,
+    best_num=10,
 ):
 
     # interpreter = Interpreter(model_path=modelpath)
@@ -105,7 +138,143 @@ def extract_augmented_data(
 
     X = []
     Y = []
-    frame_num = 0
+    tfn = 0
+    speed = 0
+
+    for video_path in video_paths:
+        print(video_path)
+        cap = cv2.VideoCapture(video_path)
+        if not max_frames:
+            max_frames = 999999999
+
+        fn = 0
+        video_len = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+        vid_name = video_path.split("/")[-1]
+
+        prev_gray = None
+        prev_pts = None
+
+        frames = [None for _ in range(fq)]
+        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        while (tfn < max_frames):
+            ret, frame = cap.read()
+            frames[tfn % fq] = frame
+            if not ret:
+                break
+            tfn += 1
+
+            if fn % 300 == 0:
+                printProgressBar(
+                    fn,
+                    video_len,
+                    prefix=f'Processing {vid_name}:',
+                    suffix='Complete',
+                    length=30,
+                )
+            fn += 1
+
+            if fn < fq:
+                continue
+
+            if (tfn - fq + 1) in vehicles:
+                prev_pts = []
+                id, (x1, y1, x2, y2), speed, cls = vehicles[tfn - fq + 1]
+                x1, y1, x2, y2 = x1 * w, y1 * h, x2 * w, y2 * h
+            else:
+                continue
+
+            for _ in range(pts_num):
+                x = np.random.randint(x1, x2)
+                y = np.random.randint(y1, y2)
+                prev_pts.append([x, y])
+
+            # Convert the frame to grayscale for optflow calculation
+            prev_gray = cv2.cvtColor(
+                frames[(tfn - fq) % fq], cv2.COLOR_BGR2GRAY)
+            # prev_gray = frame_gray.copy()
+
+            prev_pts = np.array(prev_pts).astype(np.float32)
+            prev_pts = np.float32(prev_pts)
+            prev_pts = np.expand_dims(prev_pts, axis=1)
+
+            distances = [np.abs(x2-x1), np.abs(y2-y1)]
+            for i in range(ff, fq - 1):
+                frame_gray = cv2.cvtColor(
+                    frames[(tfn - fq + i + 1) % fq], cv2.COLOR_BGR2GRAY)
+
+                # Calculate optical flow using Lucas-Kanade method
+                next_pts, status, errors = cv2.calcOpticalFlowPyrLK(
+                    prev_gray, frame_gray,
+                    prev_pts, None, **lk_params
+                )
+
+                # Check if errors is not None and has the right shape
+                if errors is not None and errors.size > 0:
+                    # get indices of the best points
+                    errors_flat = errors.flatten()
+                    sorted_indices = np.argsort(errors_flat)
+
+                    # Get indices of top best_num best points
+                    top_indices = sorted_indices[:best_num]
+
+                    # Select top best_num points based on sorted indices
+                    best_prev_pts = prev_pts[top_indices]
+                    best_next_pts = next_pts[top_indices]
+                    # best_errors = errors_flat[top_20_indices]
+
+                    # Normalize points assuming the image size is known
+                    prev_pts_n, minv, maxv = normalize_points(best_prev_pts)
+                    next_pts_n, _, _ = normalize_points(
+                        best_next_pts, minv, maxv
+                    )
+
+                    # Calculate Euclidean distances
+                    distances.extend(sorted(
+                            [
+                                d2(prev_pts_n[i], next_pts_n[i])
+                                for i in range(len(best_prev_pts))
+                            ],
+                        )
+                    )
+
+            X.append(distances)
+            Y.append(speed)
+
+        printProgressBar(
+            fn,
+            video_len,
+            prefix=f'Processing {vid_name}:',
+            suffix='Complete',
+            length=30,
+        )
+        cap.release()
+
+    return X, Y
+
+
+def extract_augmented_data2(
+    video_paths,
+    vehicles,
+    modelpath='',
+    max_frames=None,
+    fq=3,
+    ff=0,
+    pts_num=50,
+    best_num=15,
+    hist_bins=5,
+):
+
+    # Create an instance of the Lucas-Kanade optical flow algorithm
+    lk_params = dict(
+        winSize=(100, 40),
+        maxLevel=5,
+        criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
+    )
+
+    X = []
+    Y = []
+    tfn = 0
     speed = 0
 
     for video_path in video_paths:
@@ -120,19 +289,19 @@ def extract_augmented_data(
         frames = [None for _ in range(fq)]
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        while (frame_num < max_frames):
+        while (tfn < max_frames):
             ret, frame = cap.read()
-            frames[frame_num % fq] = frame
+            frames[tfn % fq] = frame
             if not ret:
                 break
-            frame_num += 1
+            tfn += 1
 
-            if frame_num < fq:
+            if tfn < fq:
                 continue
 
-            if (frame_num - fq + 1) in vehicles:
+            if (tfn - fq + 1) in vehicles:
                 prev_pts = []
-                id, (x1, y1, x2, y2), speed, cls = vehicles[frame_num - fq + 1]
+                id, (x1, y1, x2, y2), speed, cls = vehicles[tfn - fq + 1]
                 x1, y1, x2, y2 = x1 * w, y1 * h, x2 * w, y2 * h
             else:
                 continue
@@ -144,17 +313,17 @@ def extract_augmented_data(
 
             # Convert the frame to grayscale for optflow calculation
             prev_gray = cv2.cvtColor(
-                frames[(frame_num - fq) % fq], cv2.COLOR_BGR2GRAY)
+                frames[(tfn - fq) % fq], cv2.COLOR_BGR2GRAY)
             # prev_gray = frame_gray.copy()
 
             prev_pts = np.array(prev_pts).astype(np.float32)
             prev_pts = np.float32(prev_pts)
             prev_pts = np.expand_dims(prev_pts, axis=1)
 
-            distances = [np.abs(x2-x1), np.abs(y2-y1)]
+            distances = [np.abs(x2-x1)/w, np.abs(y2-y1)/h]
             for i in range(ff, fq - 1):
                 frame_gray = cv2.cvtColor(
-                    frames[(frame_num - fq + i + 1) % fq], cv2.COLOR_BGR2GRAY)
+                    frames[(tfn - fq + i + 1) % fq], cv2.COLOR_BGR2GRAY)
 
                 # Calculate optical flow using Lucas-Kanade method
                 next_pts, status, errors = cv2.calcOpticalFlowPyrLK(
@@ -168,13 +337,13 @@ def extract_augmented_data(
                     errors_flat = errors.flatten()
                     sorted_indices = np.argsort(errors_flat)
 
-                    # Get indices of top 20 best points
-                    top_20_indices = sorted_indices[:20]
+                    # Get indices of top best_num best points
+                    top_indices = sorted_indices[:best_num]
 
-                    # Select top 20 points based on sorted indices
-                    best_prev_pts = prev_pts[top_20_indices]
-                    best_next_pts = next_pts[top_20_indices]
-                    # best_errors = errors_flat[top_20_indices]
+                    # Select top best_num points based on sorted indices
+                    best_prev_pts = prev_pts[top_indices]
+                    best_next_pts = next_pts[top_indices]
+                    # best_errors = errors_flat[top_indices]
 
                     # Normalize points assuming the image size is known
                     prev_pts_n, minv, maxv = normalize_points(best_prev_pts)
@@ -183,10 +352,14 @@ def extract_augmented_data(
                     )
 
                     # Calculate Euclidean distances
-                    distances.extend([
-                        np.sqrt(np.sum((prev_pts_n[i] - next_pts_n[i]) ** 2))
-                        for i in range(len(best_prev_pts))
-                    ])
+                    distances.extend(np.histogram(
+                            [
+                                d2(prev_pts_n[i], next_pts_n[i])
+                                for i in range(len(best_prev_pts))
+                            ],
+                            bins=hist_bins,
+                        )[0]
+                    )
 
             X.append(distances)
             Y.append(speed)
@@ -194,6 +367,10 @@ def extract_augmented_data(
         cap.release()
 
     return X, Y
+
+
+def d2(a, b):
+    return np.sqrt(np.sum((a - b) ** 2))
 
 
 def save_features_in_file(X, Y, path='data/data.csv'):
@@ -247,8 +424,8 @@ def train(X, y):
 
     # Define the neural network model
     layers = [
-        Dense(512, input_shape=(len(X_train[0]),), activation='relu'),
-        Dense(512, activation='relu'),
+        Dense(8, input_shape=(len(X_train[0]),), activation='relu'),
+        Dense(16, activation='relu'),
         # Dense(32, activation='relu'),
         Dense(1)  # Output layer
     ]
@@ -263,7 +440,7 @@ def train(X, y):
     # Train the model
     model.fit(
         X_train_scaled, np.array(y_train),
-        epochs=100, batch_size=32, verbose=0
+        epochs=20, batch_size=64, verbose=1
     )
 
     # Make predictions on the test set
@@ -274,11 +451,15 @@ def train(X, y):
     print("Mean Squared Error:", mse)
 
     precision = 0
+    y_p = []
     for i, p in enumerate(predictions):
         # print(y_test[i], p)
+        y_p.append(p)
         precision += (1 - (abs(y_test[i] - p)/p))
 
     print('precision=', precision/len(predictions))
+
+    save_features_in_file(y_test, y_p, path='test.csv')
 
     return model, scaler
 
@@ -297,10 +478,17 @@ def save_model(model, model_path):
 def main():
     regen = False
     videos = [
+        'FILE0001.ASF',
         'FILE0002.ASF',
-        # 'FILE0005.ASF',
+        'FILE0004.ASF',
+        'FILE0005.ASF',
+        'FILE0008.ASF',
+        'FILE0009.ASF',
         'FILE0010.ASF',
         'FILE0019.ASF',
+        'FILE0026.ASF',
+        'FILE0027.ASF',
+        'FILE0030.ASF',
         'FILE0031.ASF',
     ]
     videos_path = '../../videos/'
@@ -310,23 +498,32 @@ def main():
     model_path = '../../speed_prediction_model/'
     speed_prediction_model_path = model_path + 'speed_prediction_model.tflite'
 
-    features_path = 'features/data.csv'
+    features_path = 'features/data4_6.csv'
 
     vehicles = parse_json(json_paths)
     print('json file was parsed successfully!\n')
 
     if regen:
-        fq = 6
-        ff = 4
+        fq = 20
+        ff = 15
 
         print(f'fq={fq}, ff={ff}')
+        # X, y = extract_augmented_data2(
+        #     video_paths=video_paths,
+        #     vehicles=vehicles,
+        #     # modelpath=license_plate_detector_model_path,
+        #     fq=fq,
+        #     ff=ff,  # number of frame involved: fq - ff - 1
+        #     best_num=20,
+        #     hist_bins=[0, 0.01, 0.05, 0.1, 0.2, 0.4, 0.8, 1.6, 3.2, 6.4],
+        # )
+
         X, y = extract_augmented_data(
             video_paths=video_paths,
             vehicles=vehicles,
             # modelpath=license_plate_detector_model_path,
             fq=fq,
             ff=ff,  # number of frame involved: fq - ff - 1
-            verbose=1,
         )
 
         print('\naugmented data extracted successfully!')
@@ -340,11 +537,11 @@ def main():
 
     model, scaler = train(X, y)
 
-    dump(scaler, model_path + 'std_scaler.bin', compress=True)
+    # dump(scaler, model_path + 'std_scaler.bin', compress=True)
 
-    print('\nModel trained!')
+    # print('\nModel trained!')
 
-    save_model(model, speed_prediction_model_path)
+    # save_model(model, speed_prediction_model_path)
 
 
 if __name__ == "__main__":
