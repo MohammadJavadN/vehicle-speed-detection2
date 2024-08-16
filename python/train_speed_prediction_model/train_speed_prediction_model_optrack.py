@@ -16,6 +16,7 @@ from sklearn.model_selection import train_test_split
 # Parse XML file
 def parse_xml(xml_paths):
     vehicles = {}
+    boxes = {}
 
     offset_frame0 = 0
     offset_frame = 0
@@ -29,27 +30,34 @@ def parse_xml(xml_paths):
         for track in root.findall('track'):
             id = track.get('id')
             cls = track.get('label')
+            vehicles[id] = []
             if cls != 'car':
                 continue
-            cnt = 1
-            for vehicle in track.findall('box'):
-                offset_frame0 = int(vehicle.get('frame'))
-                if cnt > len(track.findall('box')) - 30:
+            num = 0
+            cnt = 0
+            for box in track.findall('box'):
+                offset_frame0 = int(box.get('frame'))
+                if cnt >= len(track.findall('box')) - 30:
                     break
                 cnt += 1
-                if vehicle.get('outside') == "0" and cnt % 4 == 2:
-                    iframe = (int(vehicle.get('frame')) + 1) // 4 + 1
-                    x1 = float(vehicle.get('xtl'))/w
-                    y1 = float(vehicle.get('ytl'))/h
-                    x2 = float(vehicle.get('xbr'))/w
-                    y2 = float(vehicle.get('ybr'))/h
+                if box.get('outside') == "0" and cnt % 4 == 0:
+                    iframe = (int(box.get('frame')) + 1) // 4 + 1
+                    x1 = float(box.get('xtl'))/w
+                    y1 = float(box.get('ytl'))/h
+                    x2 = float(box.get('xbr'))/w
+                    y2 = float(box.get('ybr'))/h
 
-                    speed = int(vehicle.find('attribute').text)
+                    speed = int(box.find('attribute').text)
 
-                    vehicles[iframe + offset_frame] = (
-                        id, (x1, y1, x2, y2), speed, cls
+                    vehicles[id].append(
+                        ((x2-x1, y2-y1), speed)
                     )
-    return vehicles
+
+                    boxes[iframe + offset_frame] = (
+                        id, (x1, y1, x2, y2), speed, cls, num
+                    )
+                    num += 1
+    return vehicles, boxes
 
 
 # Normalize the points
@@ -101,9 +109,10 @@ def printProgressBar(
 def extract_augmented_data3(
     video_paths,
     vehicles,
-    max_frames=None,
+    boxes,
     fq=3,
     ff=0,
+    step=7,
 ):
 
     y_coeffs = np.linspace(0.5, 0.8, 5)
@@ -123,8 +132,6 @@ def extract_augmented_data3(
 
     for video_path in video_paths:
         cap = cv2.VideoCapture(video_path)
-        if not max_frames:
-            max_frames = 999999999
 
         fn = 0
         video_len = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
@@ -137,7 +144,7 @@ def extract_augmented_data3(
         frames = [None for _ in range(fq)]
         w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
-        while (tfn < max_frames):
+        while True:
             ret, frame = cap.read()
             frames[tfn % fq] = frame
             if not ret:
@@ -157,11 +164,15 @@ def extract_augmented_data3(
             if fn < fq:
                 continue
 
-            if (tfn - fq + 1) in vehicles:
+            if (tfn - fq + 1) in boxes:
                 prev_pts = []
-                id, (x1, y1, x2, y2), speed, cls = vehicles[tfn - fq + 1]
+                id, (x1, y1, x2, y2), speed, cls, num = boxes[tfn - fq + 1]
                 x1, y1, x2, y2 = x1 * w, y1 * h, x2 * w, y2 * h
             else:
+                continue
+
+            vehicle = vehicles[id]
+            if num + fq > len(vehicle):
                 continue
 
             for y_c in y_coeffs:
@@ -177,6 +188,12 @@ def extract_augmented_data3(
             prev_pts = np.expand_dims(prev_pts, axis=1)
 
             distances = [np.abs(x2-x1)/w, np.abs(y2-y1)/h]
+
+            (wi, hi), si = vehicle[num]
+            for j in range(num + step, num + fq, step):
+                (wj, hj), _ = vehicle[j]
+                distances.extend([(wj - wi/wi), (hj - hi)/hi])
+
             for i in range(ff, fq - 1):
                 frame_gray = cv2.cvtColor(
                     frames[(tfn - fq + i + 1) % fq], cv2.COLOR_BGR2GRAY)
@@ -289,7 +306,7 @@ def train(X, y):
     # Train the model
     model.fit(
         X_train_scaled, np.array(y_train),
-        epochs=20, batch_size=32, verbose=1
+        epochs=30, batch_size=32, verbose=1
     )
 
     # Make predictions on the test set
@@ -350,7 +367,7 @@ def main():
 
     features_path = 'features/data.csv'
 
-    vehicles = parse_xml(json_paths)
+    vehicles, boxes = parse_xml(json_paths)
     print('json file was parsed successfully!\n')
 
     if regen:
@@ -362,6 +379,7 @@ def main():
         X, y = extract_augmented_data3(
             video_paths=video_paths,
             vehicles=vehicles,
+            boxes=boxes,
             fq=fq,
             ff=ff,  # number of frame involved: fq - ff - 1
         )
