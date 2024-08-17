@@ -37,7 +37,7 @@ def parse_xml(xml_paths):
             cnt = 0
             for box in track.findall('box'):
                 offset_frame0 = int(box.get('frame'))
-                if cnt >= len(track.findall('box')) - 30:
+                if cnt >= len(track.findall('box')) - 30 * 4:
                     break
                 cnt += 1
                 if box.get('outside') == "0" and cnt % 4 == 0:
@@ -125,8 +125,10 @@ def extract_augmented_data3(
         criteria=(cv2.TERM_CRITERIA_EPS | cv2.TERM_CRITERIA_COUNT, 10, 0.03)
     )
 
-    X = []
-    Y = []
+    X_train = []
+    X_test = []
+    y_train = []
+    y_test = []
     tfn = 0
     speed = 0
 
@@ -217,8 +219,12 @@ def extract_augmented_data3(
                 #         (next_pts - prev_pts).reshape(5, 7, 2) - dfp
                 #     ) / (w, h)
 
-            X.append(distances)
-            Y.append(speed)
+            if int(id) % 8 == 0:
+                X_test.append(distances)
+                y_test.append(speed)
+            else:
+                X_train.append(distances)
+                y_train.append(speed)
 
         printProgressBar(
             4 * fn,
@@ -229,7 +235,7 @@ def extract_augmented_data3(
         )
         cap.release()
 
-    return X, Y
+    return X_train, X_test, y_train, y_test
 
 
 def d2(a, b):
@@ -273,11 +279,11 @@ def load_features_from_file(path='data/data.csv'):
     return X, Y
 
 
-def train(X, y):
-    # Split the data into training and testing sets
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.15, random_state=42
-    )
+def train(X_train, X_test, y_train, y_test):
+    # # Split the data into training and testing sets
+    # X_train, X_test, y_train, y_test = train_test_split(
+    #     X, y, test_size=0.15, random_state=42
+    # )
 
     print(len(X_train), len(X_test))
     # Normalize the input features
@@ -342,7 +348,7 @@ def save_model(model, model_path):
 
 # Main function
 def main():
-    regen = False
+    regen = True
     videos = [
         # 'FILE0001.ASF',
         # 'FILE0002.ASF',
@@ -366,6 +372,8 @@ def main():
     speed_prediction_model_path = model_path + 'speed_prediction_model.tflite'
 
     features_path = 'features/data.csv'
+    train_features_path = 'features/train_data.csv'
+    test_features_path = 'features/test_data.csv'
 
     vehicles, boxes = parse_xml(json_paths)
     print('json file was parsed successfully!\n')
@@ -376,7 +384,7 @@ def main():
 
         print(f'fq={fq}, ff={ff}')
 
-        X, y = extract_augmented_data3(
+        X_train, X_test, y_train, y_test = extract_augmented_data3(
             video_paths=video_paths,
             vehicles=vehicles,
             boxes=boxes,
@@ -386,14 +394,16 @@ def main():
 
         print('\naugmented data extracted successfully!')
 
-        save_features_in_file(X, y, path=features_path)
+        save_features_in_file(X_train, y_train, path=train_features_path)
+        save_features_in_file(X_test, y_test, path=test_features_path)
     else:
-        X, y = load_features_from_file(path=features_path)
+        X_train, y_train = load_features_from_file(path=train_features_path)
+        X_test, y_test = load_features_from_file(path=test_features_path)
         print('\naugmented data loaded successfully!')
 
     print('\ntraining model started...')
 
-    model, scaler = train(X, y)
+    model, scaler = train(X_train, X_test, y_train, y_test)
 
     # dump(scaler, model_path + 'std_scaler.bin', compress=True)
 
