@@ -29,6 +29,7 @@ import com.google.mlkit.vision.objects.DetectedObject.Label;
 import org.opencv.android.Utils;
 import org.opencv.core.Mat;
 
+import java.util.List;
 import java.util.Locale;
 
 /**
@@ -55,12 +56,12 @@ public class ObjectGraphic extends Graphic {
           };
   private static final String LABEL_FORMAT = "%.2f%% confidence (index: %d)";
 
-  private final MyDetectedObject object;
+  private final DetectedObject object;
   private final Paint[] boxPaints;
   private final Paint[] textPaints;
   private final Paint[] labelPaints;
 
-  public ObjectGraphic(GraphicOverlay overlay, MyDetectedObject object) {
+  public ObjectGraphic(GraphicOverlay overlay, DetectedObject object) {
     super(overlay);
 
     this.object = object;
@@ -90,7 +91,11 @@ public class ObjectGraphic extends Graphic {
     // Decide color based on object tracking ID
     int colorID =
             object.getTrackingId() == null ? 0 : Math.abs(object.getTrackingId() % NUM_COLORS);
-    float textWidth = textPaints[colorID].measureText("ID: " + object.getTrackingId() + ", Speed: " + ((int) object.getSpeed()));
+
+    List<Label> labels = object.getLabels();
+    int speed = (int) Float.parseFloat(labels.get(labels.size()-1).getText());
+
+    float textWidth = textPaints[colorID].measureText("ID: " + object.getTrackingId() + ", Speed: " + speed);
     float lineHeight = TEXT_SIZE + STROKE_WIDTH;
     float yLabelOffset = lineHeight;
 
@@ -126,7 +131,7 @@ public class ObjectGraphic extends Graphic {
             labelPaints[colorID]);
 //    yLabelOffset += TEXT_SIZE;
     canvas.drawText(
-            "ID: " + object.getTrackingId() + ", Speed: " + ((int) object.getSpeed()),
+            "ID: " + object.getTrackingId() + ", Speed: " + speed,
             rect.left,
             rect.top + yLabelOffset,
             textPaints[colorID]);

@@ -30,8 +30,8 @@ import java.util.Random;
 
 public class TOFSpeedDetector  {
 
-    final static int fq = 6;
-    final static int ff = 4;
+    final static int fq = 10;
+    final static int ff = 5;
     final static int ptsNum = 50;
     private static final Size WIN_SIZE = new Size(100, 40);
     private static final TermCriteria CRITERIA = new TermCriteria(TermCriteria.COUNT | TermCriteria.EPS,
@@ -43,6 +43,7 @@ public class TOFSpeedDetector  {
     private final List<Mat> frames;
     private final List<Bitmap> bitmaps;
     private final List<List<DetectedObject>> listOfObjList;
+    private final List<List<STrack>> listOfSTrackList;
     private final SpeedPredictionModel speedPredictionModel;
     private final Paint rectPaint;
     private final Paint textPaint;
@@ -65,6 +66,11 @@ public class TOFSpeedDetector  {
         listOfObjList = new ArrayList<>(fq);
         for (int i = 0; i < fq; i++) {
             listOfObjList.add(new ArrayList<>());
+        }
+
+        listOfSTrackList = new ArrayList<>(fq);
+        for (int i = 0; i < fq; i++) {
+            listOfSTrackList.add(new ArrayList<>());
         }
 
         rectPaint = new Paint();
@@ -311,6 +317,147 @@ public class TOFSpeedDetector  {
                     new DetectedObject(
                             object.getBoundingBox(),
                             object.getTrackingId(),
+                            labels
+                    )
+            );
+
+        }
+        return detectedObjectsOut;
+    }
+
+    static double[] xCoeffs;
+    static double[] yCoeffs;
+    static {
+        // Define the range and number of points
+        double yStart = 0.5;
+        double yEnd = 0.8;
+        int yNumPoints = 5;
+
+        double xStart = 0.15;
+        double xEnd = 0.85;
+        int xNumPoints = 7;
+
+        // Calculate y_coeffs and x_coeffs
+        yCoeffs = new double[yNumPoints];
+        xCoeffs = new double[xNumPoints];
+
+        for (int i = 0; i < yNumPoints; i++) {
+            yCoeffs[i] = yStart + i * (yEnd - yStart) / (yNumPoints - 1);
+        }
+
+        for (int i = 0; i < xNumPoints; i++) {
+            xCoeffs[i] = xStart + i * (xEnd - xStart) / (xNumPoints - 1);
+        }
+    }
+    public List<DetectedObject> detectSpeeds2(
+            Bitmap originalCameraImage,
+            List<STrack> detectedObjects
+    ) {
+
+        Mat frame = new Mat();
+        Utils.bitmapToMat(originalCameraImage, frame);
+
+        frames.set(frameNum % fq, frame.clone());
+        bitmaps.set(frameNum % fq, originalCameraImage.copy(originalCameraImage.getConfig(), true));
+        listOfSTrackList.set(frameNum % fq, new ArrayList<>(detectedObjects));
+        frameNum++;
+        System.out.println("*** detectedObjects.size() = " + detectedObjects.size());
+
+        if (frameNum < fq) {
+            dest = originalCameraImage;
+            System.out.println("*** frameNum < fq : " + frameNum + " < " + fq);
+            return new ArrayList<>();
+        }
+        dest = bitmaps.get((frameNum - fq) % fq);
+        List<DetectedObject> detectedObjectsOut = new ArrayList<>(detectedObjects.size());
+
+        for (STrack sTrack : listOfSTrackList.get((frameNum - fq) % fq)) {
+            int id = sTrack.trackId;
+
+            Rect rectI = sTrack.getRect();
+
+            List<Double> distances = new ArrayList<>();
+            distances.add((double) Math.abs(rectI.width));
+            distances.add((double) Math.abs(rectI.height));
+
+            final int STEP = 7;
+            for (int j = STEP; j < fq; j+= STEP) {
+                Rect rectJ = null;
+                for (STrack sTrackJ : listOfSTrackList.get((frameNum - fq + j) % fq)) {
+                    if (sTrackJ.trackId == id) {
+                        rectJ = sTrackJ.getRect();
+                    }
+                }
+                if (rectJ == null)
+                    break;
+
+                distances.add((double) ((rectJ.width - rectI.width) / rectI.width));
+                distances.add((double) ((rectJ.height - rectI.height) / rectI.height));
+            }
+
+            if (distances.size() < fq / STEP + 1)
+                continue;
+
+            List<Point> prevPts = new ArrayList<>();
+            for (double yC : yCoeffs) {
+                for (double xC : xCoeffs) {
+                    double x = rectI.tl().x + xC * (rectI.width);
+                    double y = rectI.tl().y + yC * (rectI.height);
+                    prevPts.add(new Point(x, y));
+                }
+            }
+
+            Mat prevGray = new Mat();
+            Imgproc.cvtColor(frames.get((frameNum - fq) % fq), prevGray, Imgproc.COLOR_BGR2GRAY);
+
+            MatOfPoint2f prevPtsMat = new MatOfPoint2f();
+            prevPtsMat.fromList(prevPts);
+
+            MatOfByte status = new MatOfByte();
+            MatOfFloat errors = new MatOfFloat();
+
+            // Calculate optical flow
+            for (int i = ff; i < fq - 1; i++) {
+                Mat frameGray = new Mat();
+                Imgproc.cvtColor(frames.get((frameNum - fq + i + 1) % fq), frameGray, Imgproc.COLOR_BGR2GRAY);
+
+                MatOfPoint2f nextPts = new MatOfPoint2f();
+                Video.calcOpticalFlowPyrLK(
+                        prevGray, frameGray, prevPtsMat, nextPts, status, errors, WIN_SIZE, MAX_LEVEL, CRITERIA);
+
+                List<Point> nextPtsList = nextPts.toList();
+                double dfx = nextPtsList.get(0).x - prevPts.get(0).x;
+                double dfy = nextPtsList.get(0).y - prevPts.get(0).y;
+                // Calculate Euclidean distances
+                for (int j = 0; j < prevPts.size(); j++) {
+                    Point prevPt = prevPts.get(j);
+                    Point nextPt = nextPtsList.get(j);
+                    double distance = Math.sqrt(
+                            Math.pow(nextPt.x - prevPt.x - dfx, 2) +
+                                    Math.pow(nextPt.y - prevPt.y - dfy, 2)
+                    ) / frame.width();
+                    distances.add(distance);
+                }
+
+            }
+
+            double[] input_data = listToArray(distances);
+            System.out.println(Arrays.toString(input_data));
+
+            // Get output tensor (predicted_speed_function)
+            float predictedSpeed = predictSpeed(input_data);
+
+            int speed = (int) predictedSpeed;
+
+            List<DetectedObject.Label> labels = sTrack.getLabels();
+            if (labels == null)
+                labels = new ArrayList<>();
+            labels.add(new DetectedObject.Label(Float.toString(speed), -1, -1));
+
+            detectedObjectsOut.add(
+                    new DetectedObject(
+                            sTrack.getBoundingBox(),
+                            sTrack.getTrackingId(),
                             labels
                     )
             );

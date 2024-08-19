@@ -53,9 +53,9 @@ public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObj
     protected void onSuccess(
             @NonNull List<DetectedObject> results, @NonNull GraphicOverlay graphicOverlay) {
         frameNum++;
-        setIDAndSpeed(results);
-        removeOutObj();
-        for (MyDetectedObject object : prevObjects) {
+//        setIDAndSpeed(results);
+//        removeOutObj();
+        for (DetectedObject object : results) {
             graphicOverlay.add(new ObjectGraphic(graphicOverlay, object));
         }
     }
