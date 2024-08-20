@@ -4,6 +4,6 @@
     <string name="browse">Browse</string>
     <string name="plate_detection_txt">plateDetection</string>
     <string name="save_output_txt">saveOutput</string>
-    <string name="save" />
+    <string name="save">save</string>
     <string name="change_circles" />
 </resources>

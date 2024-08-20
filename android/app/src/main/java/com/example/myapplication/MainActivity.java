@@ -41,6 +41,8 @@ import com.example.myapplication.ml.Yolov8nFloat32;
 import com.google.mlkit.vision.GraphicOverlay;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.objects.DetectedObject;
+import com.google.mlkit.vision.objects.ObjectDetection;
+import com.google.mlkit.vision.objects.ObjectDetector;
 import com.google.mlkit.vision.objects.defaults.ObjectDetectorOptions;
 
 import org.opencv.android.Utils;
@@ -86,7 +88,7 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     public static final String TAG = "ObjectDetector";
-    private static String inVideoPath = "/sdcard/Download/FILE0010.mp4";
+    private static String inVideoPath = "/sdcard/Download/FILE0030.mp4";
     private static String outVideoPath = "/sdcard/Download/ou_.mp4";
     private static int maxFrames = 500;
 
@@ -119,7 +121,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private ScheduledExecutorService scheduledExecutorService;
     private ObjectTrackerProcessor trackerProcessor;
 
-    private Yolov8nFloat32 objectDetector;
+    private ObjectDetector objectDetector;
     //    private ObjectDetector objectDetector;
     private TOFSpeedDetector tofSpeedDetector;
     private GraphicOverlay graphicOverlay;
@@ -133,7 +135,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         graphicOverlay = findViewById(R.id.overlayView);
 
-//        surfaceView = findViewById(R.id.surfaceView);
+        surfaceView = findViewById(R.id.surfaceView);
         initializeCircles();
 
         setupObjectDetector();
@@ -179,19 +181,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // Multiple object detection in static images
         ObjectDetectorOptions options =
                 new ObjectDetectorOptions.Builder()
-                        .setDetectorMode(ObjectDetectorOptions.SINGLE_IMAGE_MODE)
+                        .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
                         .enableMultipleObjects()
                         .enableClassification()  // Optional
                         .build();
 
-
-        trackerProcessor = new ObjectTrackerProcessor(this, options, tofSpeedDetector);
+        objectDetector = ObjectDetection.getClient(options);
+//        trackerProcessor = new ObjectTrackerProcessor(this, options, tofSpeedDetector);
     }
 
     private View circle1, circle2, circle3, circle4;
     private void initializeSurface() {
         graphicOverlay.roadLine.initializeCircles(circle1, circle2, circle3, circle4);
-        findViewById(R.id.changBtn).setVisibility(View.VISIBLE);
+//        findViewById(R.id.changBtn).setVisibility(View.VISIBLE);
     }
     static int state = 1;
     static final int STATE = 3;
@@ -390,13 +392,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             finished = true;
     }
     public static boolean isBusy = false;
+    int stopTime = 1;
     private void startProcess() {
         releaseResources();
 
         initialInOutVideo();
 
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
-
+        context = this;
         Runnable updateFrameTask = () -> {
             if (!isBusy) {
 //                if (isOutAvailable && graphicOverlay.isValidBitmap)
@@ -405,15 +408,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 Mat frame = new Mat();
                 boolean ret = cap.read(frame);
                 if (ret) {
+                    frameNum++;
+                    if (frameNum < 2469)
+                        return;
+//                    stopTime = 160;
                     Bitmap bitmap = matToBitmap(frame);
 
-                    if (frameNum == 0)
-                        initialParameters(bitmap);
-
-                    frameNum++;
+                    initialParameters(bitmap);
                     try {
                         isBusy = true;
-                        trackerProcessor.processBitmap(bitmap, graphicOverlay);
+//                        trackerProcessor.processBitmap(bitmap, graphicOverlay);
+                        scheduledExecutorService.shutdown();
+                        bitmap2 = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+                        processImage2();
                     } catch (Exception e) {
                         Log.e(TAG, "Failed to process image. Error: " + e.getLocalizedMessage());
                         Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT)
@@ -428,8 +435,45 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         scheduledExecutorService.scheduleAtFixedRate(
                 updateFrameTask,
                 0, // Initial delay
-                20, // Period (milliseconds)
+                stopTime, // Period (milliseconds)
                 TimeUnit.MILLISECONDS);
+    }
+
+    MainActivity context;
+    Mat frame2;
+    InputImage image2;
+    Bitmap bitmap2;
+    public void processImage2() {
+        System.out.println("public static void processImage2()");
+        boolean ret;
+        frame2 = new Mat();
+        do {
+            ret = cap.read(frame2);
+            frameNum++;
+        }
+        while (frameNum % 4 != 1);
+        if (ret) {
+            Utils.matToBitmap(frame2, bitmap2);
+            image2 = InputImage.fromBitmap(bitmap2, 0);
+            objectDetector.process(image2)
+                    .addOnSuccessListener(detectedObjects -> {
+
+                        Mat frame2 = new Mat();
+                        Utils.bitmapToMat(image2.getBitmapInternal(), frame2);
+                        Canvas canvas = surfaceView.getHolder().lockCanvas();
+                        tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                        runOnUiThread(() -> {
+                            if (canvas != null) {
+                                surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                            }
+                        });
+                        processImage2();
+                    })
+                    .addOnFailureListener(e -> {
+                        Log.e(TAG, "Object detection failed", e);
+                    });
+        }
+
     }
     private void initialParameters(Bitmap bitmap) {
         graphicOverlay.setImageSourceInfo(bitmap.getWidth(), bitmap.getHeight(), false);
@@ -552,7 +596,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             sideSpeedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 3}, DataType.FLOAT32);
 
             OptFlowSpeedPredictionModel = SpeedPredictionModel.newInstance(this);
-            speedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 22}, DataType.FLOAT32);
+            speedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 187}, DataType.FLOAT32);
 
             tofSpeedDetector = new TOFSpeedDetector(speedInputFeature, OptFlowSpeedPredictionModel);
 

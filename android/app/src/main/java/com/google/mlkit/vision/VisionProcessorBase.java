@@ -34,7 +34,9 @@ import androidx.annotation.Nullable;
 import androidx.annotation.RequiresApi;
 //import androidx.camera.core.ExperimentalGetImage;
 //import androidx.camera.core.ImageProxy;
+import com.example.myapplication.BYTETracker;
 import com.example.myapplication.MainActivity;
+import com.example.myapplication.STrack;
 import com.example.myapplication.TOFSpeedDetector;
 import com.google.android.gms.tasks.Task;
 import com.google.android.gms.tasks.TaskExecutors;
@@ -111,6 +113,8 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
   @GuardedBy("this")
   private FrameMetadata processingMetaData;
   protected TOFSpeedDetector tofSpeedDetector;
+  BYTETracker tracker;
+
   protected VisionProcessorBase(Context context) {
     activityManager = (ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE);
     executor = new ScopedExecutor(TaskExecutors.MAIN_THREAD);
@@ -126,6 +130,7 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
             /* period= */ 1000);
     temperatureMonitor = new TemperatureMonitor(context);
     this.context = context;
+    this.tracker = new BYTETracker(30, 30);
   }
 
   // -----------------Code for processing single still image----------------------------------------
@@ -297,8 +302,13 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
 //                      if (originalCameraImage != null) {
 //                        graphicOverlay.add(new CameraImageGraphic(graphicOverlay, originalCameraImage));
 //                      }
+                        System.out.println("*** b tracker.update results.size()" + ((List<DetectedObject>) results).size());
+//                      @SuppressWarnings("unchecked")
+//                      List<STrack> sTracks = tracker.update((List<DetectedObject>) results);
 
-                      T t = (T) tofSpeedDetector.detectSpeeds(
+                        System.out.println("*** b tofSpeedDetector.detectSpeeds2(");
+                      @SuppressWarnings("unchecked")
+                      T t = (T) tofSpeedDetector.detectSpeeds2(
                               originalCameraImage,
                               (List<DetectedObject>) results
                               );
@@ -322,13 +332,11 @@ public abstract class VisionProcessorBase<T> implements VisionImageProcessor {
                       }
                       graphicOverlay.postInvalidate();
                       MainActivity.isBusy = false;
-
                     })
 
             .addOnFailureListener(
                     executor,
                     e -> {
-
                       graphicOverlay.clear();
                       graphicOverlay.postInvalidate();
                       String error = "Failed to process. Error: " + e.getLocalizedMessage();

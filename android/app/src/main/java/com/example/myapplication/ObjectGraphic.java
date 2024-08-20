@@ -97,20 +97,21 @@ public class ObjectGraphic extends Graphic {
 
     float textWidth = textPaints[colorID].measureText("ID: " + object.getTrackingId() + ", Speed: " + speed);
     float lineHeight = TEXT_SIZE + STROKE_WIDTH;
-    float yLabelOffset = lineHeight;
+    float yLabelOffset = -lineHeight;
 
-    // Calculate width and height of label box
-    for (Label label : object.getLabels()) {
-      textWidth = Math.max(textWidth, textPaints[colorID].measureText(label.getText()));
-      textWidth =
-              Math.max(
-                      textWidth,
-                      textPaints[colorID].measureText(
-                              String.format(
-                                      Locale.US, LABEL_FORMAT, label.getConfidence() * 100, label.getIndex())));
-      yLabelOffset += 2 * lineHeight;
-    }
+//    // Calculate width and height of label box
+//    for (Label label : object.getLabels()) {
+//      textWidth = Math.max(textWidth, textPaints[colorID].measureText(label.getText()));
+//      textWidth =
+//              Math.max(
+//                      textWidth,
+//                      textPaints[colorID].measureText(
+//                              String.format(
+//                                      Locale.US, LABEL_FORMAT, label.getConfidence() * 100, label.getIndex())));
+//      yLabelOffset -= 2 * lineHeight;
+//    }
 
+//      yLabelOffset -= 2 * lineHeight;
 //    yLabelOffset *= -1;
 
     RectF rect = new RectF(object.getBoundingBox());
@@ -127,15 +128,15 @@ public class ObjectGraphic extends Graphic {
             rect.left - STROKE_WIDTH*0,
             rect.top,
             rect.left + textWidth + (2 * STROKE_WIDTH),
-            rect.top + yLabelOffset*1.4f,
+            rect.top - yLabelOffset,
             labelPaints[colorID]);
-//    yLabelOffset += TEXT_SIZE;
+//    yLabelOffset -= TEXT_SIZE;
     canvas.drawText(
             "ID: " + object.getTrackingId() + ", Speed: " + speed,
             rect.left,
-            rect.top + yLabelOffset,
+            rect.top - .9f * yLabelOffset,
             textPaints[colorID]);
-    yLabelOffset -= lineHeight;
+    yLabelOffset += lineHeight;
 
 //    for (Label label : object.getLabels()) {
 //      canvas.drawText(label.getText(), rect.left, rect.top + yLabelOffset, textPaints[colorID]);

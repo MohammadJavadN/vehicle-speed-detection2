@@ -17,15 +17,15 @@
         android:layout_margin="20dp"
         />
 
-<!--    <SurfaceView-->
-<!--        android:id="@+id/surfaceView"-->
-<!--        android:layout_width="wrap_content"-->
-<!--        android:layout_height="wrap_content"-->
-<!--        android:layout_below="@+id/browseBtn"-->
-<!--        android:layout_centerHorizontal="true"-->
-<!--        android:layout_margin="20dp"-->
-<!--        android:onClick="browseVideo"-->
-<!--        />-->
+    <SurfaceView
+        android:id="@+id/surfaceView"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/browseBtn"
+        android:layout_centerHorizontal="true"
+        android:layout_margin="60dp"
+        android:onClick="browseVideo"
+        />
 
 
     <com.google.mlkit.vision.GraphicOverlay
@@ -37,7 +37,7 @@
         android:layout_centerHorizontal="true"
         android:layout_marginStart="20dp"
         android:layout_marginLeft="20dp"
-        android:layout_marginTop="20dp"
+        android:layout_marginTop="60dp"
         android:layout_marginEnd="20dp"
         android:layout_marginRight="20dp"
         android:layout_marginBottom="60dp"
@@ -70,9 +70,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/title"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="10dp"
         android:layout_marginTop="10dp"
         android:text="@string/plate_detection_txt"
-        android:layout_marginStart="10dp"
         tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <Switch
@@ -80,22 +81,25 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/plateSw"
+        android:layout_alignParentStart="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginLeft="10dp"
         android:layout_marginTop="1dp"
         android:layout_marginRight="10dp"
         android:text="@string/save_output_txt"
-        android:layout_marginLeft="10dp"
         tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <Switch
         android:id="@+id/sideViewSw"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_toEndOf="@id/browseBtn"
         android:layout_below="@id/title"
+        android:layout_alignParentEnd="true"
+        android:layout_marginLeft="10dp"
         android:layout_marginTop="10dp"
+        android:layout_marginEnd="44dp"
         android:layout_marginRight="10dp"
         android:text="sideView"
-        android:layout_marginLeft="10dp"
         tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <View
@@ -147,10 +151,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/title"
-        android:layout_marginTop="10dp"
-        android:layout_marginEnd="34dp"
-        android:layout_toStartOf="@+id/saveBtn"
+        android:layout_alignParentEnd="true"
+        android:layout_marginTop="40dp"
+        android:layout_marginEnd="40dp"
         android:onClick="changeCircles"
         android:text="@string/change_circles"
-        android:visibility="invisible"/>
+        android:visibility="invisible" />
 </RelativeLayout>
