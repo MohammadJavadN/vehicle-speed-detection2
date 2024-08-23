@@ -42,11 +42,39 @@ public class TOFSpeedDetector extends SpeedDetector {
             0.003);
     private static final int MAX_LEVEL = 10;
     private static final int MAX_CORNERS = 20;
+    static double[] xCoeffs;
+    static double[] yCoeffs;
+
+    static {
+        // Define the range and number of points
+        double yStart = 0.5;
+        double yEnd = 0.8;
+        int yNumPoints = 5;
+
+        double xStart = 0.15;
+        double xEnd = 0.85;
+        int xNumPoints = 7;
+
+        // Calculate y_coeffs and x_coeffs
+        yCoeffs = new double[yNumPoints];
+        xCoeffs = new double[xNumPoints];
+
+        for (int i = 0; i < yNumPoints; i++) {
+            yCoeffs[i] = yStart + i * (yEnd - yStart) / (yNumPoints - 1);
+        }
+
+        for (int i = 0; i < xNumPoints; i++) {
+            xCoeffs[i] = xStart + i * (xEnd - xStart) / (xNumPoints - 1);
+        }
+    }
+
     private final TensorBuffer speedInputFeature;
     private final List<Bitmap> bitmaps;
     private final List<List<STrack>> listOfSTrackList;
     private final SpeedPredictionModel speedPredictionModel;
+    public Bitmap dest;
     private int frameNum = 0;
+
     public TOFSpeedDetector(TensorBuffer speedInputFeature, SpeedPredictionModel speedPredictionModel) {
         super(fq);
         this.speedInputFeature = speedInputFeature;
@@ -135,7 +163,7 @@ public class TOFSpeedDetector extends SpeedDetector {
 
             ArrayList<android.graphics.Rect> rectJs = new ArrayList<>();
             // Calculate optical flow
-            for (int i = ff + 1; i < fq - 1; i+=STEP) { // TODO: 19.08.24
+            for (int i = ff + 1; i < fq - 1; i += STEP) { // TODO: 19.08.24
                 Mat frameGray = new Mat();
                 Imgproc.cvtColor(frames.get((frameNum - fq + i) % fq), frameGray, Imgproc.COLOR_BGR2GRAY);
 
@@ -201,7 +229,7 @@ public class TOFSpeedDetector extends SpeedDetector {
             if (rectJs.size() < ((fq - ff) / STEP)) // TODO: 19.08.24
                 continue;
 
-            for (android.graphics.Rect rectJ: rectJs) {
+            for (android.graphics.Rect rectJ : rectJs) {
                 data.add(((double) (rectJ.width() - rectI.width()) / rectI.width()));
                 data.add(((double) (rectJ.height() - rectI.height()) / rectI.height()));
             }
@@ -224,15 +252,12 @@ public class TOFSpeedDetector extends SpeedDetector {
             );
 
             draw(canvas, scaledBBox, speed, id);
-//            canvas.drawRect(scaledBBox, rectPaint);
-//            canvas.drawText(Float.toString((float) speed), scaledBBox.left + 16, scaledBBox.top + 160, textPaint);
-
+            updateObjectsSpeed(frameNum, id, speed);
 
         }
 
     }
 
-    public Bitmap dest;
     public List<DetectedObject> detectSpeeds(
             Bitmap originalCameraImage,
             List<DetectedObject> detectedObjects
@@ -344,30 +369,6 @@ public class TOFSpeedDetector extends SpeedDetector {
         return detectedObjectsOut;
     }
 
-    static double[] xCoeffs;
-    static double[] yCoeffs;
-    static {
-        // Define the range and number of points
-        double yStart = 0.5;
-        double yEnd = 0.8;
-        int yNumPoints = 5;
-
-        double xStart = 0.15;
-        double xEnd = 0.85;
-        int xNumPoints = 7;
-
-        // Calculate y_coeffs and x_coeffs
-        yCoeffs = new double[yNumPoints];
-        xCoeffs = new double[xNumPoints];
-
-        for (int i = 0; i < yNumPoints; i++) {
-            yCoeffs[i] = yStart + i * (yEnd - yStart) / (yNumPoints - 1);
-        }
-
-        for (int i = 0; i < xNumPoints; i++) {
-            xCoeffs[i] = xStart + i * (xEnd - xStart) / (xNumPoints - 1);
-        }
-    }
     public List<DetectedObject> detectSpeeds2(
             Bitmap originalCameraImage,
             List<DetectedObject> detectedObjects
@@ -441,7 +442,7 @@ public class TOFSpeedDetector extends SpeedDetector {
 
             ArrayList<android.graphics.Rect> rectJs = new ArrayList<>();
             // Calculate optical flow
-            for (int i = ff + 1; i < fq - 1; i+=STEP) { // TODO: 19.08.24
+            for (int i = ff + 1; i < fq - 1; i += STEP) { // TODO: 19.08.24
                 Mat frameGray = new Mat();
                 Imgproc.cvtColor(frames.get((frameNum - fq + i) % fq), frameGray, Imgproc.COLOR_BGR2GRAY);
 
@@ -482,20 +483,20 @@ public class TOFSpeedDetector extends SpeedDetector {
 //                );
 
                 android.graphics.Rect rectJ = getIdForFrame(
-                    (frameNum - fq + i) % fq,
-                    new android.graphics.Rect(
-                        (int) (rectI.left + dfx),
-                        (int) (rectI.top + dfy),
-                        (int) (rectI.left + rectI.width()),
-                        (int) (rectI.top + rectI.height())
-                    ),
-                    id
+                        (frameNum - fq + i) % fq,
+                        new android.graphics.Rect(
+                                (int) (rectI.left + dfx),
+                                (int) (rectI.top + dfy),
+                                (int) (rectI.left + rectI.width()),
+                                (int) (rectI.top + rectI.height())
+                        ),
+                        id
                 );
                 if (rectJ == null)
                     if (rectJs.isEmpty())
                         break;
                     else
-                        rectJs.add(rectJs.get(rectJs.size()-1));
+                        rectJs.add(rectJs.get(rectJs.size() - 1));
                 else
                     rectJs.add(rectJ);
 
@@ -505,7 +506,7 @@ public class TOFSpeedDetector extends SpeedDetector {
             if (rectJs.size() < ((fq - ff) / STEP)) // TODO: 19.08.24
                 continue;
 
-            for (android.graphics.Rect rectJ: rectJs) {
+            for (android.graphics.Rect rectJ : rectJs) {
                 data.add(((double) (rectJ.width() - rectI.width()) / rectI.width()));
                 data.add(((double) (rectJ.height() - rectI.height()) / rectI.height()));
             }

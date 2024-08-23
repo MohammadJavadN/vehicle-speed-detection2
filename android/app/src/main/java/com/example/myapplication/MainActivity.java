@@ -514,7 +514,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
     private static String outCSVFileName = "out.csv";
     public void saveCsv(View view) {
-        HashMap<Integer, HashMap<Integer, Float>> ObjectsSpeed = MyDetectedObject.getObjectsSpeed();
+        HashMap<Integer, HashMap<Integer, Float>> ObjectsSpeed = SpeedDetector.getObjectsSpeed();
         Set<Integer> unnecessaryKey = new HashSet<>();
         for (Integer key : ObjectsSpeed.keySet()) {
             if (Objects.requireNonNull(ObjectsSpeed.get(key)).isEmpty())

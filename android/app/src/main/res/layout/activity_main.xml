@@ -76,7 +76,9 @@
         android:layout_marginTop="1dp"
         android:layout_marginRight="10dp"
         android:text="@string/save_output_txt"
-        tools:ignore="UseSwitchCompatOrMaterialXml" />
+        tools:ignore="UseSwitchCompatOrMaterialXml"
+        android:visibility="invisible"
+        />
 
     <View
         android:id="@+id/circle1"

@@ -161,6 +161,7 @@ public class OptSpeedDetector extends SpeedDetector {
             );
 
             draw(canvas, scaledBBox, speed, id);
+            updateObjectsSpeed(frameNum, id, speed);
 
         }
 

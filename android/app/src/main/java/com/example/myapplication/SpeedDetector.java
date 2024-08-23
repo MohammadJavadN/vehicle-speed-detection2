@@ -12,10 +12,13 @@ import org.opencv.core.Mat;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Objects;
 
 public abstract class SpeedDetector {
 
+    protected static final HashMap<Integer, HashMap<Integer, Float>> objectsSpeed = new HashMap<>();
     private static final float TEXT_SIZE = 100.0f;
     private static final float STROKE_WIDTH = 15.0f;
     private static final int NUM_COLORS = 10;
@@ -35,12 +38,12 @@ public abstract class SpeedDetector {
             };
     protected final List<Mat> frames;
     protected final List<List<DetectedObject>> listOfObjList;
+    protected final boolean showOpt = false;
     private final Paint rectPaint;
     private final Paint textPaint;
     private final Paint[] labelPaints;
     private final Paint[] boxPaints;
     private final Paint[] textPaints;
-    protected final boolean showOpt = false;
     protected Bitmap bitmap;
     private int idGen = 1;
 
@@ -85,6 +88,10 @@ public abstract class SpeedDetector {
         }
     }
 
+    public static HashMap<Integer, HashMap<Integer, Float>> getObjectsSpeed() {
+        return objectsSpeed;
+    }
+
     /**
      * Calculates Intersection over Union (IoU) between two Rect objects.
      *
@@ -118,6 +125,15 @@ public abstract class SpeedDetector {
 
         // Calculate IoU
         return (float) intersectionArea / unionArea;
+    }
+
+    protected void updateObjectsSpeed(int frameNum, int id, int speed) {
+        if (!objectsSpeed.containsKey(id)) {
+            HashMap<Integer, Float> frameSpeed = new HashMap<>();
+            frameSpeed.put(frameNum, (float) speed);
+            objectsSpeed.put(id, frameSpeed);
+        } else
+            Objects.requireNonNull(objectsSpeed.get(id)).put(frameNum, (float) speed);
     }
 
     public void draw(Canvas canvas, android.graphics.Rect rect, float speed, int id) {
