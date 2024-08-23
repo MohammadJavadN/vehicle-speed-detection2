@@ -6,4 +6,7 @@
     <string name="save_output_txt">saveOutput</string>
     <string name="save">save</string>
     <string name="change_circles" />
+    <string name="ase">ASE</string>
+    <string name="side_view">Side View</string>
+    <string name="top_view">Top View</string>
 </resources>

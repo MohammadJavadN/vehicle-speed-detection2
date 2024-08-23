@@ -23,6 +23,8 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Switch;
 import android.widget.Toast;
 
@@ -88,7 +90,9 @@ import java.util.concurrent.TimeUnit;
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     public static final String TAG = "ObjectDetector";
-    private static String inVideoPath = "/sdcard/Download/FILE0030.mp4";
+    private static String inVideoPath = "/sdcard/Download/FILE0030.mp4"; // tof (ASE)
+//    private static String inVideoPath = "/sdcard/Download/side_vid.mp4"; // side
+//    private static String inVideoPath = "/sdcard/Download/Video(1).mp4"; // top
     private static String outVideoPath = "/sdcard/Download/ou_.mp4";
     private static int maxFrames = 500;
 
@@ -124,6 +128,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private ObjectDetector objectDetector;
     //    private ObjectDetector objectDetector;
     private TOFSpeedDetector tofSpeedDetector;
+    private OptSpeedDetector topSpeedDetector;
+    private OptSpeedDetector sideSpeedDetector;
     private GraphicOverlay graphicOverlay;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -143,6 +149,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     }
     Yolov8ObjectDetector yolov8ObjectDetector;
+    public static final int DETECTION_MODE = ObjectDetectorOptions.SINGLE_IMAGE_MODE;
     private void setupObjectDetector() {
         Log.d(TAG, "setupObjectDetector");
 //***************************** ml kit model *********************************
@@ -181,9 +188,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         // Multiple object detection in static images
         ObjectDetectorOptions options =
                 new ObjectDetectorOptions.Builder()
-                        .setDetectorMode(ObjectDetectorOptions.STREAM_MODE)
+                        .setDetectorMode(DETECTION_MODE)
                         .enableMultipleObjects()
-                        .enableClassification()  // Optional
+//                        .enableClassification()  // Optional
                         .build();
 
         objectDetector = ObjectDetection.getClient(options);
@@ -233,10 +240,27 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
     Interpreter interpreter;
     private static String outCSVPath = "/sdcard/Download/out.csv";
+    private boolean isTOF, isSide;
     private void setupFileChooser() {
         fileChooser = registerForActivityResult(
                 new ActivityResultContracts.GetContent(),
                 uri -> {
+
+                    isTOF = ((RadioButton) findViewById(R.id.radioASE)).isChecked();
+                    isSide = ((RadioButton) findViewById(R.id.radioSide)).isChecked();
+
+                    if (isTOF) {
+                        inVideoPath = "/sdcard/Download/FILE0030.mp4"; // tof (ASE)
+                        FRAME_STEP = 4;
+                    } else if (isSide) {
+                        inVideoPath = "/sdcard/Download/side_vid.mp4"; // side
+                        FRAME_STEP = 1;
+                    } else {
+                        FRAME_STEP = 1;
+                        inVideoPath = "/sdcard/Download/Video(1).mp4"; // top
+                    }
+                    findViewById(R.id.radioGroup).setVisibility(View.GONE);
+
                     String path = getRealPathFromURI(this, uri);
                     if (path == null)
                         path = inVideoPath;
@@ -409,7 +433,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 boolean ret = cap.read(frame);
                 if (ret) {
                     frameNum++;
-                    if (frameNum < 2469)
+//                    if (frameNum < 2469)
+                    if (frameNum < 2)
                         return;
 //                    stopTime = 160;
                     Bitmap bitmap = matToBitmap(frame);
@@ -443,6 +468,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Mat frame2;
     InputImage image2;
     Bitmap bitmap2;
+    int FRAME_STEP = 1;
     public void processImage2() {
         System.out.println("public static void processImage2()");
         boolean ret;
@@ -451,7 +477,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             ret = cap.read(frame2);
             frameNum++;
         }
-        while (frameNum % 4 != 1);
+        while (frameNum % FRAME_STEP != 0);
         if (ret) {
             Utils.matToBitmap(frame2, bitmap2);
             image2 = InputImage.fromBitmap(bitmap2, 0);
@@ -461,7 +487,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         Mat frame2 = new Mat();
                         Utils.bitmapToMat(image2.getBitmapInternal(), frame2);
                         Canvas canvas = surfaceView.getHolder().lockCanvas();
-                        tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                        if (isTOF)
+                            tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                        else if (isSide)
+                            sideSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                        else
+                            topSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
                         runOnUiThread(() -> {
                             if (canvas != null) {
                                 surfaceView.getHolder().unlockCanvasAndPost(canvas);
@@ -599,6 +630,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             speedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 187}, DataType.FLOAT32);
 
             tofSpeedDetector = new TOFSpeedDetector(speedInputFeature, OptFlowSpeedPredictionModel);
+
+            topSpeedDetector = new OptSpeedDetector(topSpeedInputFeature2, speedPredictionTopViewNoPlateModel);
+            sideSpeedDetector = new OptSpeedDetector(sideSpeedInputFeature, speedPredictionModelSideView);
 
         } catch (IOException e) {
             throw new RuntimeException(e);
