@@ -170,6 +170,7 @@ def extract_augmented_data3(
                 prev_pts = []
                 id, (x1, y1, x2, y2), speed, cls, num = boxes[tfn - fq + 1]
                 x1, y1, x2, y2 = x1 * w, y1 * h, x2 * w, y2 * h
+                wb = x2 - x1
             else:
                 continue
 
@@ -192,13 +193,13 @@ def extract_augmented_data3(
             distances = [np.abs(x2-x1)/w, np.abs(y2-y1)/h]
 
             (wi, hi), si = vehicle[num]
-            for j in range(num + step, num + fq, step):
+            for j in range(num + 1, num + fq - 1, step):
                 (wj, hj), _ = vehicle[j]
-                distances.extend([(wj - wi/wi), (hj - hi)/hi])
+                distances.extend([(wj - wi)/wi, (hj - hi)/hi])
 
-            for i in range(ff, fq - 1):
+            for i in range(ff + 1, fq - 1, step):
                 frame_gray = cv2.cvtColor(
-                    frames[(tfn - fq + i + 1) % fq], cv2.COLOR_BGR2GRAY)
+                    frames[(tfn - fq + i) % fq], cv2.COLOR_BGR2GRAY)
 
                 # Calculate optical flow using Lucas-Kanade method
                 next_pts, _, _ = cv2.calcOpticalFlowPyrLK(
@@ -210,7 +211,7 @@ def extract_augmented_data3(
 
                 distances.extend(
                     [
-                        d2(next_pts[i], prev_pts[i] + dfp)/(w)
+                        d2(next_pts[i], prev_pts[i] + dfp)/(wb)
                         for i in range(len(prev_pts))
                     ]
                 )
@@ -219,6 +220,7 @@ def extract_augmented_data3(
                 #         (next_pts - prev_pts).reshape(5, 7, 2) - dfp
                 #     ) / (w, h)
 
+            speed = speed * step / 7
             if int(id) % 8 == 0:
                 X_test.append(distances)
                 y_test.append(speed)
@@ -253,6 +255,32 @@ def save_features_in_file(X, Y, path='data/data.csv'):
             {
                 'X': X[i],
                 'speed': Y[i],
+            }
+        )
+
+    # Write data to CSV file
+    with open(path, 'w', newline='') as csvfile:
+        writer = csv.DictWriter(csvfile, fieldnames=field_names)
+        writer.writeheader()  # Write column headers
+        writer.writerows(rows)  # Write data rows
+
+    print(f"CSV file {path} created successfully!")
+
+
+def save_in_file(Y, Yu, Yd, Yp, dy, path='data/test.csv'):
+    # Define field names (column headers)
+    field_names = ['Y', 'Yu', 'Yd', 'Yp', 'dy']
+
+    # Create a list of dictionaries (rows)
+    rows = []
+    for i in range(len(Y)):
+        rows.append(
+            {
+                'Y': Y[i],
+                'Yu': Yu[i],
+                'Yd': Yd[i],
+                'Yp': Yp[i],
+                'dy': dy[i],
             }
         )
 
@@ -323,15 +351,21 @@ def train(X_train, X_test, y_train, y_test):
     print("Mean Squared Error:", mse)
 
     precision = 0
+    y_u = []
+    y_d = []
     y_p = []
+    dy = []
     for i, p in enumerate(predictions):
         # print(y_test[i], p)
+        y_u.append(y_test[i]*1.15)
+        y_d.append(y_test[i]*0.85)
         y_p.append(p)
+        dy.append(abs(y_test[i] - p))
         precision += (1 - (abs(y_test[i] - p)/p))
 
     print('precision=', precision/len(predictions))
 
-    save_features_in_file(y_test, y_p, path='test.csv')
+    save_in_file(y_test, y_u, y_d, y_p, dy, path='test.csv')
 
     return model, scaler
 
@@ -378,19 +412,35 @@ def main():
     vehicles, boxes = parse_xml(json_paths)
     print('json file was parsed successfully!\n')
 
+    X_train = []
+    X_test = []
+    y_train = []
+    y_test = []
     if regen:
-        fq = 35
-        ff = 30
+        fq = 37
+        ff = 0
 
-        print(f'fq={fq}, ff={ff}')
+        for step in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
+            fq = step * 5 + 2
+            print(f'fq={fq}, ff={ff}, step={step}')
 
-        X_train, X_test, y_train, y_test = extract_augmented_data3(
-            video_paths=video_paths,
-            vehicles=vehicles,
-            boxes=boxes,
-            fq=fq,
-            ff=ff,  # number of frame involved: fq - ff - 1
-        )
+            X_train_t, X_test_t, y_train_t, y_test_t = extract_augmented_data3(
+                video_paths=video_paths,
+                vehicles=vehicles,
+                boxes=boxes,
+                fq=fq,
+                ff=ff,  # number of frame involved: fq - ff - 1
+                step=step,
+            )
+
+            X_train.extend(X_train_t)
+            y_train.extend(y_train_t)
+            X_test.extend(X_test_t)
+            y_test.extend(y_test_t)
+            if step == 7:
+                for _ in range(4):
+                    X_train.extend(X_train_t)
+                    y_train.extend(y_train_t)
 
         print('\naugmented data extracted successfully!')
 
@@ -398,18 +448,35 @@ def main():
         save_features_in_file(X_test, y_test, path=test_features_path)
     else:
         X_train, y_train = load_features_from_file(path=train_features_path)
-        X_test, y_test = load_features_from_file(path=test_features_path)
+#         X_test, y_test = load_features_from_file(path=test_features_path)
         print('\naugmented data loaded successfully!')
-
+        X_train_t, X_test, y_train_t, y_test = extract_augmented_data3(
+            video_paths=video_paths,
+            vehicles=vehicles,
+            boxes=boxes,
+            fq=37,
+            ff=0,  # number of frame involved: fq - ff - 1
+            step=7,
+        )
+        X_train.extend(X_train_t)
+        y_train.extend(y_train_t)
+        X_train.extend(X_train_t)
+        y_train.extend(y_train_t)
+        X_train.extend(X_train_t)
+        y_train.extend(y_train_t)
+        X_train.extend(X_train_t)
+        y_train.extend(y_train_t)
+        X_train.extend(X_train_t)
+        y_train.extend(y_train_t)
     print('\ntraining model started...')
 
     model, scaler = train(X_train, X_test, y_train, y_test)
 
-    # dump(scaler, model_path + 'std_scaler.bin', compress=True)
+    dump(scaler, model_path + 'std_scaler2.bin', compress=True)
 
-    # print('\nModel trained!')
+    print('\nModel trained!')
 
-    # save_model(model, speed_prediction_model_path)
+    save_model(model, speed_prediction_model_path)
 
 
 if __name__ == "__main__":
