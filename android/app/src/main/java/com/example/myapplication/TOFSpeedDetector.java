@@ -251,8 +251,8 @@ public class TOFSpeedDetector extends SpeedDetector {
                     (int) (rectI.bottom * sy)
             );
 
+            speed = updateObjectsSpeed(frameNum, id, speed);
             draw(canvas, scaledBBox, speed, id);
-            updateObjectsSpeed(frameNum, id, speed);
 
         }
 

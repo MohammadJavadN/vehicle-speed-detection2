@@ -4,6 +4,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.graphics.Rect;
 
 import com.google.mlkit.vision.objects.DetectedObject;
 
@@ -14,6 +15,7 @@ import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public abstract class SpeedDetector {
@@ -99,10 +101,10 @@ public abstract class SpeedDetector {
      * @param rect2 Second rectangle.
      * @return The IoU value.
      */
-    public static float calculateIoU(android.graphics.Rect rect1, android.graphics.Rect rect2) {
+    public static float calculateIoU(Rect rect1, Rect rect2) {
         // Compute the intersection rectangle
-        android.graphics.Rect intersection = new android.graphics.Rect();
-        if (!android.graphics.Rect.intersects(rect1, rect2)) {
+        Rect intersection = new Rect();
+        if (!Rect.intersects(rect1, rect2)) {
             // No intersection
             return 0.0f;
         }
@@ -127,16 +129,64 @@ public abstract class SpeedDetector {
         return (float) intersectionArea / unionArea;
     }
 
-    protected void updateObjectsSpeed(int frameNum, int id, int speed) {
+    protected int updateObjectsSpeed(int frameNum, int id, int speed) {
         if (!objectsSpeed.containsKey(id)) {
             HashMap<Integer, Float> frameSpeed = new HashMap<>();
             frameSpeed.put(frameNum, (float) speed);
             objectsSpeed.put(id, frameSpeed);
         } else
             Objects.requireNonNull(objectsSpeed.get(id)).put(frameNum, (float) speed);
+        
+        return (int) meanSpeed(Objects.requireNonNull(objectsSpeed.get(id)));
     }
 
-    public void draw(Canvas canvas, android.graphics.Rect rect, float speed, int id) {
+    private float meanSpeed(HashMap<Integer, Float> frameSpeeds) {
+        if (frameSpeeds.isEmpty()) return 0; // handle empty map case
+
+        float totalSum = 0;
+        int count = 0;
+
+        // Calculate the initial mean and gather counts for filtering
+        for (Float speed : frameSpeeds.values()) {
+            if (speed > 0) {
+                totalSum += speed;
+                count++;
+            }
+        }
+        if (count == 0)
+            return 0;
+        float mean1 = totalSum / count;
+
+        float filteredSum = 0;
+        int filteredCount = 0;
+
+        // Compute filtered mean in a single pass
+        for (Map.Entry<Integer, Float> entry : frameSpeeds.entrySet()) {
+            Float speed = entry.getValue();
+            if (speed > 0.7 * mean1 && speed < 1.3 * mean1) {
+                filteredSum += speed;
+                filteredCount++;
+            }
+        }
+
+        // Handle case where no values fall into the filtered range
+        if (filteredCount == 0) {
+            return mean1; // or return another meaningful value if required
+        }
+
+        float mean2 = filteredSum / filteredCount;
+
+        // Update the map values
+        for (Map.Entry<Integer, Float> entry : frameSpeeds.entrySet()) {
+            if (entry.getValue() > 0.7 * mean1 && entry.getValue() < 1.3 * mean1) {
+                entry.setValue(mean2);
+            }
+        }
+
+        return mean2;
+    }
+
+    public void draw(Canvas canvas, Rect rect, float speed, int id) {
         // Decide color based on object tracking ID
         int colorID = id % NUM_COLORS;
 
@@ -207,7 +257,7 @@ public abstract class SpeedDetector {
         return array;
     }
 
-    android.graphics.Rect setIdForFrame(int frameNum, android.graphics.Rect rect, int id) {
+    Rect setIdForFrame(int frameNum, Rect rect, int id) {
         double maxIOU = Double.MIN_VALUE;
         int selectedIdx = -1;
         DetectedObject selectedObj = null;
@@ -240,7 +290,7 @@ public abstract class SpeedDetector {
         return selectedObj.getBoundingBox();
     }
 
-    android.graphics.Rect getIdForFrame(int frameNum, android.graphics.Rect rect, int id) {
+    Rect getIdForFrame(int frameNum, Rect rect, int id) {
         List<DetectedObject> objects = listOfObjList.get(frameNum);
         for (DetectedObject obj : objects) {
             if (obj.getTrackingId() != null)
