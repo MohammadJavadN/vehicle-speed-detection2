@@ -5,7 +5,9 @@ import static java.lang.Math.abs;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
@@ -31,6 +33,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
 import androidx.core.content.ContextCompat;
@@ -119,8 +122,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private static TermCriteria criteria;
     private static int imW;
     private static int imH;
-
-    ActivityResultLauncher<String> fileChooser;
     SurfaceView surfaceView;
     private ScheduledExecutorService scheduledExecutorService;
     private ObjectTrackerProcessor trackerProcessor;
@@ -145,8 +146,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         initializeCircles();
 
         setupObjectDetector();
-        setupFileChooser();
-
     }
     Yolov8ObjectDetector yolov8ObjectDetector;
     public static final int DETECTION_MODE = ObjectDetectorOptions.SINGLE_IMAGE_MODE;
@@ -241,57 +240,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Interpreter interpreter;
     private static String outCSVPath = "/sdcard/Download/out.csv";
     private boolean isTOF, isSide;
-    private void setupFileChooser() {
-        fileChooser = registerForActivityResult(
-                new ActivityResultContracts.GetContent(),
-                uri -> {
-
-                    isTOF = ((RadioButton) findViewById(R.id.radioASE)).isChecked();
-                    isSide = ((RadioButton) findViewById(R.id.radioSide)).isChecked();
-
-                    if (isTOF) {
-                        inVideoPath = "/sdcard/Download/FILE0030.mp4"; // tof (ASE)
-                        FRAME_STEP = 4;
-                    } else if (isSide) {
-                        inVideoPath = "/sdcard/Download/side_vid.mp4"; // side
-                        FRAME_STEP = 1;
-                    } else {
-                        FRAME_STEP = 1;
-                        inVideoPath = "/sdcard/Download/Video(1).mp4"; // top
-                    }
-                    findViewById(R.id.radioGroup).setVisibility(View.GONE);
-
-                    String path = getRealPathFromURI(this, uri);
-                    if (path == null)
-                        path = inVideoPath;
-                    if (new File(path).exists())
-                        inVideoPath = path;
-
-                    String[] paths = inVideoPath.split("/");
-                    paths[paths.length - 1] = "output.mp4";
-                    outVideoPath = String.join("/", paths);
-
-                    paths[paths.length - 1] = "output.csv";
-                    outCSVPath = String.join("/", paths);
-
-
-                    Toast.makeText(getApplicationContext(),
-                            "out_path: " + outVideoPath,
-                            Toast.LENGTH_LONG).show();
-                    System.out.println(MainActivity.inVideoPath);
-                    System.out.println(outCSVPath);
-
-                    // Start updating frames periodically
-                    findViewById(R.id.saveBtn).setVisibility(View.VISIBLE);
-                    findViewById(R.id.browseBtn).setVisibility(View.GONE);
-
-                    initializeSurface();
-                    startProcess();
-
-//                    startProcessingVideo();
-                }
-        );
-    }
 
     private static final int PERMISSION_REQUEST_CODE = 100;
 
@@ -496,6 +444,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         runOnUiThread(() -> {
                             if (canvas != null) {
                                 surfaceView.getHolder().unlockCanvasAndPost(canvas);
+//                                if (isOutAvailable)
+//                                    out.encodeFrame(surfaceView.getDrawingCache());
                             }
                         });
                         processImage2();
@@ -582,9 +532,74 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 //        RoadLine.globalCoeff *= (float) (fps / 30);
     }
 
+    int REQUEST_VIDEO_CODE = 1;
     public void browseVideo(android.view.View view) {
-        fileChooser.launch("video/*");
+//        fileChooser.launch("video/*");
+        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+        intent.addCategory(Intent.CATEGORY_OPENABLE);
+        intent.setType("video/*"); // Filter to show only videos
+        startActivityForResult(intent, REQUEST_VIDEO_CODE);
+
     }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQUEST_VIDEO_CODE && resultCode == Activity.RESULT_OK) {
+            if (data != null) {
+
+
+                isTOF = ((RadioButton) findViewById(R.id.radioASE)).isChecked();
+                isSide = ((RadioButton) findViewById(R.id.radioSide)).isChecked();
+
+                if (isTOF) {
+                    inVideoPath = "/sdcard/Download/FILE0005.mp4"; // tof (ASE)
+                    FRAME_STEP = 4;
+                } else if (isSide) {
+                    inVideoPath = "/sdcard/Download/side_vid.mp4"; // side
+                    FRAME_STEP = 1;
+                } else {
+                    FRAME_STEP = 1;
+                    inVideoPath = "/sdcard/Download/Video(1).mp4"; // top
+                }
+                findViewById(R.id.radioGroup).setVisibility(View.GONE);
+
+
+                Uri selectedVideoUri = data.getData();
+                // Now you have the selected video URI to use in your app
+                String path = FilePathHelper.getPathFromUri(this, selectedVideoUri);
+                if (path == null)
+                    path = inVideoPath;
+                if (new File(path).exists())
+                    inVideoPath = path;
+
+                String[] paths = inVideoPath.split("/");
+                paths[paths.length - 1] = "output.mp4";
+                outVideoPath = String.join("/", paths);
+
+                paths[paths.length - 1] = "output.csv";
+                outCSVPath = String.join("/", paths);
+
+
+                Toast.makeText(getApplicationContext(),
+                        "out_path: " + outVideoPath,
+                        Toast.LENGTH_LONG).show();
+                System.out.println(MainActivity.inVideoPath);
+                System.out.println(outCSVPath);
+
+                // Start updating frames periodically
+                findViewById(R.id.saveBtn).setVisibility(View.VISIBLE);
+                findViewById(R.id.browseBtn).setVisibility(View.GONE);
+                initializeSurface();
+                try {
+                    startProcess();
+                } catch (Exception e){
+                    System.out.println(e.toString());
+                }
+            }
+        }
+    }
+
 
     public static int getId(float x, float y, int imW) {
         int gs = (int) (imW/4.8);  // grid_width

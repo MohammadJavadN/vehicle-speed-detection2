@@ -21,8 +21,8 @@ import java.util.Objects;
 public abstract class SpeedDetector {
 
     protected static final HashMap<Integer, HashMap<Integer, Float>> objectsSpeed = new HashMap<>();
-    private static final float TEXT_SIZE = 100.0f;
-    private static final float STROKE_WIDTH = 15.0f;
+    private static final float TEXT_SIZE = 20.0f;
+    private static final float STROKE_WIDTH = 3.0f;
     private static final int NUM_COLORS = 10;
     private static final int[][] COLORS =
             new int[][]{
@@ -130,14 +130,56 @@ public abstract class SpeedDetector {
     }
 
     protected int updateObjectsSpeed(int frameNum, int id, int speed) {
-        if (!objectsSpeed.containsKey(id)) {
-            HashMap<Integer, Float> frameSpeed = new HashMap<>();
-            frameSpeed.put(frameNum, (float) speed);
-            objectsSpeed.put(id, frameSpeed);
-        } else
-            Objects.requireNonNull(objectsSpeed.get(id)).put(frameNum, (float) speed);
-        
-        return (int) meanSpeed(Objects.requireNonNull(objectsSpeed.get(id)));
+        if (speed != -1) {
+            if (!objectsSpeed.containsKey(id)) {
+                HashMap<Integer, Float> frameSpeed = new HashMap<>();
+                frameSpeed.put(frameNum, (float) speed);
+                objectsSpeed.put(id, frameSpeed);
+            } else
+                Objects.requireNonNull(objectsSpeed.get(id)).put(frameNum, (float) speed);
+
+            if (!carSpeeds.containsKey(id)) {
+                ArrayList<Float> speeds = new ArrayList<>();
+                speeds.add((float) speed);
+                carSpeeds.put(id, speeds);
+            } else
+                Objects.requireNonNull(carSpeeds.get(id)).add((float) speed);
+        }
+        if (!objectsSpeed.containsKey(id))
+            return -1;
+        if (objectsSpeed.get(id) == null)
+            return -1;
+        return (int) meanSpeed(Objects.requireNonNull(carSpeeds.get(id)));
+    }
+
+    final int N = 8;
+    float[] speeds = new float[N];
+    HashMap<Integer, ArrayList<Float>> carSpeeds = new HashMap<>();
+    private float meanSpeed(ArrayList<Float> carSpeeds) {
+        if (carSpeeds.isEmpty()) return 0; // handle empty map case
+
+        float totalSum = 0;
+        int count = 0;
+
+        // Calculate the initial mean and gather counts for filtering
+        for (Float speed : carSpeeds) {
+            if (speed > 0) {
+                totalSum += speed;
+                count++;
+                speeds[count % N] = speed;
+            }
+        }
+        if (count == 0)
+            return 0;
+        if (count < N)
+            return totalSum / count;
+
+        totalSum = 0;
+        for (int i = 0; i < N; i++) {
+            totalSum += speeds[i];
+        }
+        return totalSum / N;
+
     }
 
     private float meanSpeed(HashMap<Integer, Float> frameSpeeds) {

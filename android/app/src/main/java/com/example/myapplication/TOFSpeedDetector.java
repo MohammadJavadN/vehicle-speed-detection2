@@ -226,8 +226,19 @@ public class TOFSpeedDetector extends SpeedDetector {
                     rectJs.add(rectJ);
 
             }
-            if (rectJs.size() < ((fq - ff) / STEP)) // TODO: 19.08.24
+            android.graphics.Rect scaledBBox = new android.graphics.Rect(
+                    (int) (rectI.left * sx),
+                    (int) (rectI.top * sy),
+                    (int) (rectI.right * sx),
+                    (int) (rectI.bottom * sy)
+            );
+
+            if (rectJs.size() < ((fq - ff) / STEP)) { // TODO: 19.08.24
+                float speed = updateObjectsSpeed(frameNum, id, -1);
+                if (speed > 0)
+                    draw(canvas, scaledBBox, speed, id);
                 continue;
+            }
 
             for (android.graphics.Rect rectJ : rectJs) {
                 data.add(((double) (rectJ.width() - rectI.width()) / rectI.width()));
@@ -243,13 +254,6 @@ public class TOFSpeedDetector extends SpeedDetector {
 
             int speed = (int) predictedSpeed;
             // Draw label text
-
-            android.graphics.Rect scaledBBox = new android.graphics.Rect(
-                    (int) (rectI.left * sx),
-                    (int) (rectI.top * sy),
-                    (int) (rectI.right * sx),
-                    (int) (rectI.bottom * sy)
-            );
 
             speed = updateObjectsSpeed(frameNum, id, speed);
             draw(canvas, scaledBBox, speed, id);
