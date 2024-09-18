@@ -9,4 +9,6 @@
     <string name="ase">ASE</string>
     <string name="side_view">Side View</string>
     <string name="top_view">Top View</string>
+    <string name="server">Server</string>
+    <string name="local">Local</string>
 </resources>

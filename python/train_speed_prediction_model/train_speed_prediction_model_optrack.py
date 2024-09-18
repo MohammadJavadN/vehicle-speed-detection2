@@ -1,16 +1,14 @@
 import ast
 import cv2
 import csv
-import json
 import numpy as np
 from joblib import dump
 import tensorflow as tf
 import xml.etree.ElementTree as ET
-from keras.layers import Conv2D, MaxPooling2D, Flatten, Dense
+from keras.layers import Dense
 from keras.models import Sequential
 from sklearn.metrics import mean_squared_error
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
 
 
 # Parse XML file
@@ -19,18 +17,22 @@ def parse_xml(xml_paths):
     boxes = {}
 
     offset_frame0 = 0
+    offset_id0 = 0
     offset_frame = 0
+    offset_id = 0
     for xml_path in xml_paths:
         tree = ET.parse(xml_path)
         root = tree.getroot()
         offset_frame += offset_frame0
+        offset_id += offset_id0
         w = int(root.find('meta').find('original_size').find('width').text)
         h = int(root.find('meta').find('original_size').find('height').text)
 
         for track in root.findall('track'):
-            id = track.get('id')
+            id = int(track.get('id'))
+            offset_id0 = id
             cls = track.get('label')
-            vehicles[id] = []
+            vehicles[id + offset_id] = []
             if cls != 'car':
                 continue
             num = 0
@@ -49,12 +51,12 @@ def parse_xml(xml_paths):
 
                     speed = int(box.find('attribute').text)
 
-                    vehicles[id].append(
+                    vehicles[id + offset_id].append(
                         ((x2-x1, y2-y1), speed)
                     )
 
                     boxes[iframe + offset_frame] = (
-                        id, (x1, y1, x2, y2), speed, cls, num
+                        id + offset_id, (x1, y1, x2, y2), speed, cls, num
                     )
                     num += 1
     return vehicles, boxes
@@ -192,10 +194,10 @@ def extract_augmented_data3(
 
             distances = [np.abs(x2-x1)/w, np.abs(y2-y1)/h]
 
-            (wi, hi), si = vehicle[num]
-            for j in range(num + 1, num + fq - 1, step):
-                (wj, hj), _ = vehicle[j]
-                distances.extend([(wj - wi)/wi, (hj - hi)/hi])
+            # (wi, hi), si = vehicle[num]
+            # for j in range(num + 1, num + fq - 1, step):
+            #     (wj, hj), _ = vehicle[j]
+            #     distances.extend([(wj - wi)/wi, (hj - hi)/hi])
 
             for i in range(ff + 1, fq - 1, step):
                 frame_gray = cv2.cvtColor(
@@ -215,12 +217,8 @@ def extract_augmented_data3(
                         for i in range(len(prev_pts))
                     ]
                 )
-                # # Calculate Euclidean distances
-                # optflw[:, :, 2 * (i - ff):2 * (i - ff + 1)] = (
-                #         (next_pts - prev_pts).reshape(5, 7, 2) - dfp
-                #     ) / (w, h)
 
-            speed = speed * step / 7
+            speed = speed * step / main_step
             if int(id) % 8 == 0:
                 X_test.append(distances)
                 y_test.append(speed)
@@ -308,10 +306,6 @@ def load_features_from_file(path='data/data.csv'):
 
 
 def train(X_train, X_test, y_train, y_test):
-    # # Split the data into training and testing sets
-    # X_train, X_test, y_train, y_test = train_test_split(
-    #     X, y, test_size=0.15, random_state=42
-    # )
 
     print(len(X_train), len(X_test))
     # Normalize the input features
@@ -321,15 +315,12 @@ def train(X_train, X_test, y_train, y_test):
 
     # Define the neural network model
     layers = [
-        Dense(1024, input_shape=(len(X_train[0]),), activation='relu'),
-        Dense(1024, activation='relu'),
+        Dense(512, input_shape=(len(X_train[0]),), activation='relu'),
+        Dense(512, activation='relu'),
         Dense(32, activation='relu'),
         Dense(1)  # Output layer
     ]
     model = Sequential(layers)
-
-    # for layer in layers:
-    #     print(layer)
 
     # Compile the model
     model.compile(optimizer='adam', loss='mean_squared_error')
@@ -360,7 +351,7 @@ def train(X_train, X_test, y_train, y_test):
         y_u.append(y_test[i]*1.15)
         y_d.append(y_test[i]*0.85)
         y_p.append(p)
-        dy.append(abs(y_test[i] - p))
+        dy.append(abs(y_test[i] - p)/p)
         precision += (1 - (abs(y_test[i] - p)/p))
 
     print('precision=', precision/len(predictions))
@@ -382,15 +373,18 @@ def save_model(model, model_path):
 
 # Main function
 def main():
+    global main_step
+
     regen = True
+    # regen = False
     videos = [
-        # 'FILE0001.ASF',
-        # 'FILE0002.ASF',
+        'FILE0001.ASF',
+        'FILE0002.ASF',
         # 'FILE0004.ASF',
         # 'FILE0005.ASF',
         # 'FILE0008.ASF',
         # 'FILE0009.ASF',
-        # 'FILE0010.ASF',
+        'FILE0010.ASF',
         # 'FILE0019.ASF',
         # 'FILE0026.ASF',
         # 'FILE0027.ASF',
@@ -402,12 +396,11 @@ def main():
     video_paths = [videos_path + v for v in videos]
     json_paths = [vp.replace('ASF', 'xml') for vp in video_paths]
 
-    model_path = '../../speed_prediction_model/'
-    speed_prediction_model_path = model_path + 'speed_prediction_model.tflite'
+    model_path = ''
+    speed_prediction_model_path = model_path + 'speed_prediction_model_nobox.tflite'
 
-    features_path = 'features/data.csv'
-    train_features_path = 'features/train_data.csv'
-    test_features_path = 'features/test_data.csv'
+    train_features_path = 'features/train_data_nobox.csv'
+    test_features_path = 'features/test_data_nobox.csv'
 
     vehicles, boxes = parse_xml(json_paths)
     print('json file was parsed successfully!\n')
@@ -420,8 +413,9 @@ def main():
         fq = 37
         ff = 0
 
-        for step in [2, 3, 4, 5, 6, 7, 8, 9, 10, 11]:
-            fq = step * 5 + 2
+        main_step = 6
+        for step in [9, 3, 8, 4, 5, 7, 6]:
+            fq = step * 6 + 2
             print(f'fq={fq}, ff={ff}, step={step}')
 
             X_train_t, X_test_t, y_train_t, y_test_t = extract_augmented_data3(
@@ -437,10 +431,6 @@ def main():
             y_train.extend(y_train_t)
             X_test.extend(X_test_t)
             y_test.extend(y_test_t)
-            if step == 7:
-                for _ in range(4):
-                    X_train.extend(X_train_t)
-                    y_train.extend(y_train_t)
 
         print('\naugmented data extracted successfully!')
 
@@ -448,31 +438,14 @@ def main():
         save_features_in_file(X_test, y_test, path=test_features_path)
     else:
         X_train, y_train = load_features_from_file(path=train_features_path)
-#         X_test, y_test = load_features_from_file(path=test_features_path)
+        X_test, y_test = load_features_from_file(path=test_features_path)
         print('\naugmented data loaded successfully!')
-        X_train_t, X_test, y_train_t, y_test = extract_augmented_data3(
-            video_paths=video_paths,
-            vehicles=vehicles,
-            boxes=boxes,
-            fq=37,
-            ff=0,  # number of frame involved: fq - ff - 1
-            step=7,
-        )
-        X_train.extend(X_train_t)
-        y_train.extend(y_train_t)
-        X_train.extend(X_train_t)
-        y_train.extend(y_train_t)
-        X_train.extend(X_train_t)
-        y_train.extend(y_train_t)
-        X_train.extend(X_train_t)
-        y_train.extend(y_train_t)
-        X_train.extend(X_train_t)
-        y_train.extend(y_train_t)
+
     print('\ntraining model started...')
 
     model, scaler = train(X_train, X_test, y_train, y_test)
 
-    dump(scaler, model_path + 'std_scaler2.bin', compress=True)
+    dump(scaler, model_path + 'std_scaler_nobox.bin', compress=True)
 
     print('\nModel trained!')
 

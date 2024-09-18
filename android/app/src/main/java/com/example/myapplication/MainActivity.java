@@ -33,6 +33,7 @@ import android.widget.Toast;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.contract.ActivityResultContracts;
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.core.app.ActivityCompat;
@@ -90,6 +91,11 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 
+import okhttp3.Call;
+import okhttp3.Callback;
+import okhttp3.Request;
+import okhttp3.Response;
+
 public class MainActivity extends AppCompatActivity implements View.OnTouchListener {
 
     public static final String TAG = "ObjectDetector";
@@ -131,6 +137,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private TOFSpeedDetector tofSpeedDetector;
     private OptSpeedDetector topSpeedDetector;
     private OptSpeedDetector sideSpeedDetector;
+    private ServerSpeedDetector serverSpeedDetector;
     private GraphicOverlay graphicOverlay;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -148,7 +155,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         setupObjectDetector();
     }
     Yolov8ObjectDetector yolov8ObjectDetector;
-    public static final int DETECTION_MODE = ObjectDetectorOptions.SINGLE_IMAGE_MODE;
+    public static int DETECTION_MODE = ObjectDetectorOptions.SINGLE_IMAGE_MODE;
     private void setupObjectDetector() {
         Log.d(TAG, "setupObjectDetector");
 //***************************** ml kit model *********************************
@@ -239,7 +246,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
     Interpreter interpreter;
     private static String outCSVPath = "/sdcard/Download/out.csv";
-    private boolean isTOF, isSide;
+    private boolean isServer, isTOF, isSide;
 
     private static final int PERMISSION_REQUEST_CODE = 100;
 
@@ -380,14 +387,16 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 Mat frame = new Mat();
                 boolean ret = cap.read(frame);
                 if (ret) {
+                    if (frameNum == 0) {
+                        Bitmap bitmap = matToBitmap(frame);
+                        initialParameters(bitmap);
+                    }
                     frameNum++;
 //                    if (frameNum < 2469)
                     if (frameNum < 2)
                         return;
 //                    stopTime = 160;
-                    Bitmap bitmap = matToBitmap(frame);
 
-                    initialParameters(bitmap);
                     try {
                         isBusy = true;
 //                        trackerProcessor.processBitmap(bitmap, graphicOverlay);
@@ -429,7 +438,53 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         if (ret) {
             Utils.matToBitmap(frame2, bitmap2);
             image2 = InputImage.fromBitmap(bitmap2, 0);
-            objectDetector.process(image2)
+
+            if (isServer) {
+
+                Request request = serverSpeedDetector.sendFrameToServer(bitmap2);
+                serverSpeedDetector.client.newCall(request).enqueue(new Callback() {
+                    @Override
+                    public void onFailure(Call call, IOException e) {
+                        Log.e("ServerSpeedDetector", "Failed to send frame", e);
+                    }
+
+                    @Override
+                    public void onResponse(@NonNull Call call, @NonNull Response response) throws IOException {
+                        if (response.isSuccessful()) {
+                            String responseData = response.body().string();
+
+                            // Parse the response into List<DetectedObject>
+                            List<DetectedObject> detectedObjects = ServerSpeedDetector.parseDetectedObjects(responseData);
+
+                            // Log or use the detected objects
+                            for (DetectedObject obj : detectedObjects) {
+                                Log.d("ServerSpeedDetector", "Detected object: " + obj.getTrackingId() + " Bbox: " + obj.getBoundingBox().toString());
+                            }
+
+                            Mat frame2 = new Mat();
+                            Utils.bitmapToMat(image2.getBitmapInternal(), frame2);
+                            Canvas canvas = surfaceView.getHolder().lockCanvas();
+                            if (isTOF)
+                                tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                            else if (isSide)
+                                sideSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                            else
+                                topSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+//                            runOnUiThread(() -> {
+                            if (canvas != null) {
+                                surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                            }
+//                            });
+                            processImage2();
+
+
+                        } else {
+                            Log.e("ServerSpeedDetector", "Unexpected response: " + response.message());
+                        }
+                    }
+                });
+            } else {
+                objectDetector.process(image2)
                     .addOnSuccessListener(detectedObjects -> {
 
                         Mat frame2 = new Mat();
@@ -453,6 +508,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     .addOnFailureListener(e -> {
                         Log.e(TAG, "Object detection failed", e);
                     });
+            }
         }
 
     }
@@ -549,11 +605,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if (data != null) {
 
 
+                isServer = ((RadioButton) findViewById(R.id.radioServer)).isChecked();
+                if (isServer)
+                    DETECTION_MODE = ObjectDetectorOptions.STREAM_MODE;
                 isTOF = ((RadioButton) findViewById(R.id.radioASE)).isChecked();
                 isSide = ((RadioButton) findViewById(R.id.radioSide)).isChecked();
-
+                
                 if (isTOF) {
-                    inVideoPath = "/sdcard/Download/FILE0005.mp4"; // tof (ASE)
+                    inVideoPath = "/sdcard/Download/FILE0010.mp4"; // tof (ASE)
                     FRAME_STEP = 4;
                 } else if (isSide) {
                     inVideoPath = "/sdcard/Download/side_vid.mp4"; // side
@@ -562,12 +621,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     FRAME_STEP = 1;
                     inVideoPath = "/sdcard/Download/Video(1).mp4"; // top
                 }
+
+                System.out.println("*** " + inVideoPath);
+                findViewById(R.id.radioGroupServer).setVisibility(View.GONE);
                 findViewById(R.id.radioGroup).setVisibility(View.GONE);
 
 
                 Uri selectedVideoUri = data.getData();
                 // Now you have the selected video URI to use in your app
-                String path = FilePathHelper.getPathFromUri(this, selectedVideoUri);
+                String path = null;
+                try {
+                    path = FilePathHelper.getPathFromUri(this, selectedVideoUri);
+                } catch (Exception e){
+                    System.out.println(e.toString());
+                }
                 if (path == null)
                     path = inVideoPath;
                 if (new File(path).exists())
@@ -642,12 +709,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             sideSpeedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 3}, DataType.FLOAT32);
 
             OptFlowSpeedPredictionModel = SpeedPredictionModel.newInstance(this);
-            speedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 187}, DataType.FLOAT32);
+            speedInputFeature = TensorBuffer.createFixedSize(new int[]{1, 212}, DataType.FLOAT32);
 
             tofSpeedDetector = new TOFSpeedDetector(speedInputFeature, OptFlowSpeedPredictionModel);
 
             topSpeedDetector = new OptSpeedDetector(topSpeedInputFeature2, speedPredictionTopViewNoPlateModel);
             sideSpeedDetector = new OptSpeedDetector(sideSpeedInputFeature, speedPredictionModelSideView);
+
+            serverSpeedDetector = new ServerSpeedDetector();
 
         } catch (IOException e) {
             throw new RuntimeException(e);

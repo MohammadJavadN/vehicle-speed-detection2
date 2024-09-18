@@ -6,3 +6,9 @@ model/
 models/
 test.csv
 test.xls
+pb_model/
+*.ods
+*import*.py
+*draw_optflow.py
+*__pycache__/
+

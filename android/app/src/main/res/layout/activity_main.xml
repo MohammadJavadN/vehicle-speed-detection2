@@ -136,10 +136,37 @@
         android:visibility="invisible" />
 
     <RadioGroup
-        android:id="@+id/radioGroup"
+        android:id="@+id/radioGroupServer"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/saveBtn"
+        android:layout_marginTop="15dp"
+        android:orientation="vertical"
+        android:layout_centerHorizontal="true">
+
+        <RadioButton
+            android:id="@+id/radioServer"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/server"
+            />
+
+        <RadioButton
+            android:id="@+id/radioLocal"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/local"
+            android:checked="true"
+            />
+
+    </RadioGroup>
+
+
+    <RadioGroup
+        android:id="@+id/radioGroup"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@+id/radioGroupServer"
         android:layout_marginTop="15dp"
         android:orientation="vertical"
         android:layout_centerHorizontal="true">

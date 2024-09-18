@@ -1,3 +1,4 @@
 *.ASF
 # .gitignore
 *.rar
+object_detection_model/

@@ -21,7 +21,7 @@ import java.util.Objects;
 public abstract class SpeedDetector {
 
     protected static final HashMap<Integer, HashMap<Integer, Float>> objectsSpeed = new HashMap<>();
-    private static final float TEXT_SIZE = 20.0f;
+    private static final float TEXT_SIZE = 40.0f;
     private static final float STROKE_WIDTH = 3.0f;
     private static final int NUM_COLORS = 10;
     private static final int[][] COLORS =

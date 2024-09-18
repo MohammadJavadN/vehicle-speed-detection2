@@ -61,4 +61,13 @@ dependencies {
 
     // Object detection & tracking feature with custom bundled model
     implementation libs.object.detection.custom
+
+    implementation libs.ejml.all
+
+    implementation 'org.apache.commons:commons-math3:3.6.1'
+    implementation libs.jgrapht.core
+
+    implementation libs.okhttp
+    implementation 'com.google.code.gson:gson:2.8.8'
+
 }
