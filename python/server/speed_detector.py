@@ -15,7 +15,7 @@ def load_tflite_model(path):
 
 
 ff = 0
-step = 6
+step = 6 * 4
 main_step = 6
 fq = step * 6 + 2
 frames = [None for _ in range(fq)]
@@ -23,7 +23,7 @@ list_of_obj_list = [None for _ in range(fq)]
 frame_num = 0
 
 model_path = '/content/drive/MyDrive/speed_prediction_model/'
-model_path = 'speed_prediction_model/'
+model_path = '../../speed_prediction_model/'
 speed_prediction_model_path = model_path + \
     'speed_prediction_model_nobox.tflite'
 

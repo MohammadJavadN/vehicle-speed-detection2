@@ -16,17 +16,21 @@ def parse_xml(xml_paths):
     vehicles = {}
     boxes = {}
 
-    offset_frame0 = 0
+    # offset_frame0 = 0
     offset_id0 = 0
     offset_frame = 0
     offset_id = 0
     for xml_path in xml_paths:
+        cap = cv2.VideoCapture(xml_path.replace('xml', 'mp4'))
+
+        video_len = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
+
         tree = ET.parse(xml_path)
         root = tree.getroot()
-        offset_frame += offset_frame0
+        # offset_frame += offset_frame0
         offset_id += offset_id0
-        w = int(root.find('meta').find('original_size').find('width').text)
-        h = int(root.find('meta').find('original_size').find('height').text)
+        W = int(root.find('meta').find('original_size').find('width').text)
+        H = int(root.find('meta').find('original_size').find('height').text)
 
         for track in root.findall('track'):
             id = int(track.get('id'))
@@ -38,16 +42,16 @@ def parse_xml(xml_paths):
             num = 0
             cnt = 0
             for box in track.findall('box'):
-                offset_frame0 = int(box.get('frame'))
+                # offset_frame0 = int(box.get('frame'))
                 if cnt >= len(track.findall('box')) - 30 * 4:
                     break
                 cnt += 1
-                if box.get('outside') == "0" and cnt % 4 == 0:
-                    iframe = (int(box.get('frame')) + 1) // 4 + 1
-                    x1 = float(box.get('xtl'))/w
-                    y1 = float(box.get('ytl'))/h
-                    x2 = float(box.get('xbr'))/w
-                    y2 = float(box.get('ybr'))/h
+                if box.get('outside') == "0":  # and cnt % 4 == 0:
+                    iframe = (int(box.get('frame')) - 1)  # // 4 + 1
+                    x1 = float(box.get('xtl'))/W
+                    y1 = float(box.get('ytl'))/H
+                    x2 = float(box.get('xbr'))/W
+                    y2 = float(box.get('ybr'))/H
 
                     speed = int(box.find('attribute').text)
 
@@ -59,6 +63,8 @@ def parse_xml(xml_paths):
                         id + offset_id, (x1, y1, x2, y2), speed, cls, num
                     )
                     num += 1
+        offset_frame += video_len
+
     return vehicles, boxes
 
 
@@ -146,8 +152,8 @@ def extract_augmented_data3(
         prev_pts = None
 
         frames = [None for _ in range(fq)]
-        w = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
-        h = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+        W = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+        H = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         while True:
             ret, frame = cap.read()
             frames[tfn % fq] = frame
@@ -157,7 +163,7 @@ def extract_augmented_data3(
 
             if fn % 300 == 0:
                 printProgressBar(
-                    4 * fn,
+                    fn,
                     video_len,
                     prefix=f'Processing {vid_name}:',
                     suffix='Complete',
@@ -171,7 +177,7 @@ def extract_augmented_data3(
             if (tfn - fq + 1) in boxes:
                 prev_pts = []
                 id, (x1, y1, x2, y2), speed, cls, num = boxes[tfn - fq + 1]
-                x1, y1, x2, y2 = x1 * w, y1 * h, x2 * w, y2 * h
+                x1, y1, x2, y2 = x1 * W, y1 * H, x2 * W, y2 * H
                 wb = x2 - x1
             else:
                 continue
@@ -180,9 +186,22 @@ def extract_augmented_data3(
             if num + fq > len(vehicle):
                 continue
 
+            # d_frame = frames[(tfn - fq) % fq].copy()
+            # cv2.rectangle(
+            #     d_frame,
+            #     (int(x1), int(y1)),
+            #     (int(x2), int(y2)), (0, 255, 0), 2,
+            # )
+
+            # # Display the processed frame
+            # cv2.imshow('Processed Video', d_frame)
+            # if cv2.waitKey(1) & 0xFF == ord('q'):
+            #     cv2.waitKey(0)
+
             for y_c in y_coeffs:
                 for x_c in x_coeffs:
-                    prev_pts.append([x1 + x_c * (x2 - x1), y1 + y_c * (y2 - y1)])
+                    prev_pts.append(
+                        [x1 + x_c * (x2 - x1), y1 + y_c * (y2 - y1)])
             # Convert the frame to grayscale for optflow calculation
             prev_gray = cv2.cvtColor(
                 frames[(tfn - fq) % fq], cv2.COLOR_BGR2GRAY)
@@ -192,7 +211,7 @@ def extract_augmented_data3(
             prev_pts = np.float32(prev_pts)
             prev_pts = np.expand_dims(prev_pts, axis=1)
 
-            distances = [np.abs(x2-x1)/w, np.abs(y2-y1)/h]
+            distances = [np.abs(x2-x1)/W, np.abs(y2-y1)/H]
 
             # (wi, hi), si = vehicle[num]
             # for j in range(num + 1, num + fq - 1, step):
@@ -227,7 +246,7 @@ def extract_augmented_data3(
                 y_train.append(speed)
 
         printProgressBar(
-            4 * fn,
+            fn,
             video_len,
             prefix=f'Processing {vid_name}:',
             suffix='Complete',
@@ -375,26 +394,26 @@ def save_model(model, model_path):
 def main():
     global main_step
 
-    regen = True
-    # regen = False
+    # regen = True
+    regen = False
     videos = [
-        'FILE0001.ASF',
-        'FILE0002.ASF',
+        'FILE0001.mp4',
+        'FILE0002.mp4',
         # 'FILE0004.ASF',
         # 'FILE0005.ASF',
         # 'FILE0008.ASF',
         # 'FILE0009.ASF',
-        'FILE0010.ASF',
+        'FILE0010.mp4',
         # 'FILE0019.ASF',
         # 'FILE0026.ASF',
         # 'FILE0027.ASF',
-        'FILE0030.ASF',
+        'FILE0030.mp4',
         # 'FILE0031.ASF',
     ]
     videos_path = '../../videos/'
     # videos_path = '/media/javad/24D69A46D69A17DE/code/vehicle_speed_project_2/videos/'
     video_paths = [videos_path + v for v in videos]
-    json_paths = [vp.replace('ASF', 'xml') for vp in video_paths]
+    json_paths = [vp.replace('mp4', 'xml') for vp in video_paths]
 
     model_path = ''
     speed_prediction_model_path = model_path + 'speed_prediction_model_nobox.tflite'
@@ -414,7 +433,8 @@ def main():
         ff = 0
 
         main_step = 6
-        for step in [9, 3, 8, 4, 5, 7, 6]:
+        for step in [8, 4, 5, 7, 6]:
+            step *= 4
             fq = step * 6 + 2
             print(f'fq={fq}, ff={ff}, step={step}')
 

@@ -1,4 +1,3 @@
-import os
 import cv2
 import xml.etree.ElementTree as ET
 
@@ -51,7 +50,7 @@ def parse_xml(xml_paths):
         root = tree.getroot()
         offset_frame += offset_frame0
         offset_id += offset_id0
-        print('offset_frame0 = ', offset_frame0, 'offset_frame = ', offset_frame)
+
         w = int(root.find('meta').find('original_size').find('width').text)
         h = int(root.find('meta').find('original_size').find('height').text)
 
@@ -68,7 +67,7 @@ def parse_xml(xml_paths):
                 cnt += 1
                 if box.get('outside') == "0" and cnt % 4 == 0:
                     offset_frame0 = int(box.get('frame'))
-                    iframe = (int(box.get('frame')) + 1) #// 4 + 1
+                    iframe = (int(box.get('frame')) + 1)  # // 4 + 1
                     x1 = float(box.get('xtl'))/w
                     y1 = float(box.get('ytl'))/h
                     x2 = float(box.get('xbr'))/w
@@ -127,19 +126,6 @@ total = max(annotations.keys())
 fo0 = 0
 fo = 0
 for video_path in video_paths:
-    # video_path_mp4 = video_path.replace('ASF', 'mp4')
-    # # Convert the video to MP4 format
-    # try:
-    #     video_clip = VideoFileClip(video_path)
-    #     video_clip.write_videofile(
-    #         video_path_mp4, codec="libx264", audio_codec="aac")
-    #     print(f"Conversion successful: {video_path_mp4} has been created.")
-    # except Exception as e:
-    #     print(f"An error occurred: {e}")
-    #     break
-    # finally:
-    #     video_clip.close()
-
     cap = cv2.VideoCapture(video_path)
 
     vid_name = video_path.split("/")[-1]
@@ -177,10 +163,12 @@ for video_path in video_paths:
 
             x2 = x1 + w
             y2 = y1 + h
-            cv2.rectangle(frame,
-                        (int(x1*W), int(y1*H)),
-                        (int(x2*W), int(y2*H)), (0, 255, 0), 2)
-            
+            cv2.rectangle(
+                frame,
+                (int(x1*W), int(y1*H)),
+                (int(x2*W), int(y2*H)), (0, 255, 0), 2,
+            )
+
             # Display the processed frame
             cv2.imshow('Processed Video', frame)
             if cv2.waitKey(1) & 0xFF == ord('q'):
@@ -198,11 +186,3 @@ for video_path in video_paths:
 
     fo += 1000000
     cap.release()
-
-    # # Check if the file exists before removing it
-    # if os.path.exists(video_path_mp4) and 'mp4' in video_path_mp4:
-    #     os.remove(video_path_mp4)
-    #     print(f"{video_path_mp4} has been removed successfully.")
-    # else:
-    #     print(f"{video_path_mp4} does not exist.")
-
