@@ -25,6 +25,7 @@ import android.util.Log;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
 import android.widget.Switch;
@@ -139,6 +140,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private OptSpeedDetector sideSpeedDetector;
     private ServerSpeedDetector serverSpeedDetector;
     private GraphicOverlay graphicOverlay;
+    String serverUrl = "http://192.168.43.226:5000/";
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -606,8 +608,17 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
                 isServer = ((RadioButton) findViewById(R.id.radioServer)).isChecked();
-                if (isServer)
+                if (isServer) {
                     DETECTION_MODE = ObjectDetectorOptions.STREAM_MODE;
+                    String ip1, ip2, ip3, ip4, port;
+                    ip1 = ((EditText) findViewById(R.id.ip1)).getText().toString();
+                    ip2 = ((EditText) findViewById(R.id.ip2)).getText().toString();
+                    ip3 = ((EditText) findViewById(R.id.ip3)).getText().toString();
+                    ip4 = ((EditText) findViewById(R.id.ip4)).getText().toString();
+                    port = ((EditText) findViewById(R.id.port)).getText().toString();
+                    serverUrl = "http://" + ip1 + "." + ip2 + "." + ip3 + "." + ip4 + ":" + port + "/";
+                    serverSpeedDetector = new ServerSpeedDetector(serverUrl);
+                }
                 isTOF = ((RadioButton) findViewById(R.id.radioASE)).isChecked();
                 isSide = ((RadioButton) findViewById(R.id.radioSide)).isChecked();
                 
@@ -625,6 +636,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 System.out.println("*** " + inVideoPath);
                 findViewById(R.id.radioGroupServer).setVisibility(View.GONE);
                 findViewById(R.id.radioGroup).setVisibility(View.GONE);
+                findViewById(R.id.url).setVisibility(View.GONE);
 
 
                 Uri selectedVideoUri = data.getData();
@@ -715,8 +727,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
             topSpeedDetector = new OptSpeedDetector(topSpeedInputFeature2, speedPredictionTopViewNoPlateModel);
             sideSpeedDetector = new OptSpeedDetector(sideSpeedInputFeature, speedPredictionModelSideView);
-
-            serverSpeedDetector = new ServerSpeedDetector();
 
         } catch (IOException e) {
             throw new RuntimeException(e);

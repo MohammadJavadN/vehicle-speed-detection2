@@ -37,11 +37,12 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class ServerSpeedDetector {
-    public ServerSpeedDetector() {
+    public ServerSpeedDetector(String url) {
+        SERVER_URL = url;
         initializeServerModel();
     }
 
-    private static final String SERVER_URL = "http://10.42.0.191:5000/";
+    private final String SERVER_URL; // = "http://192.168.43.226:5000/";
     private static final String TAG = "ServerSpeedDetector";
 
     protected Bitmap bitmap;
