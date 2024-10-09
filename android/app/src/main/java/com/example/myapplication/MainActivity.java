@@ -481,7 +481,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
                         } else {
-                            Log.e("ServerSpeedDetector", "Unexpected response: " + response.message());
+                            String responseBody = response.body() != null ? response.body().string() : "No response body";
+                            Log.e(TAG, "Server returned an error: " + response.code() + " - " + response.message());
+                            Log.e(TAG, "Response body: " + responseBody);
                         }
                     }
                 });
@@ -617,6 +619,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     ip4 = ((EditText) findViewById(R.id.ip4)).getText().toString();
                     port = ((EditText) findViewById(R.id.port)).getText().toString();
                     serverUrl = "http://" + ip1 + "." + ip2 + "." + ip3 + "." + ip4 + ":" + port + "/";
+                    serverUrl = ((EditText) findViewById(R.id.url)).getText().toString();
                     serverSpeedDetector = new ServerSpeedDetector(serverUrl);
                 }
                 isTOF = ((RadioButton) findViewById(R.id.radioASE)).isChecked();
@@ -636,7 +639,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 System.out.println("*** " + inVideoPath);
                 findViewById(R.id.radioGroupServer).setVisibility(View.GONE);
                 findViewById(R.id.radioGroup).setVisibility(View.GONE);
-                findViewById(R.id.url).setVisibility(View.GONE);
+                findViewById(R.id.IP_layout).setVisibility(View.GONE);
+                findViewById(R.id.url_layout).setVisibility(View.GONE);
 
 
                 Uri selectedVideoUri = data.getData();

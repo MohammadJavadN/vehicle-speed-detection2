@@ -18,13 +18,14 @@
         />
 
     <LinearLayout
-        android:id="@+id/url"
+        android:id="@+id/IP_layout"
         android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/title"
         android:layout_centerHorizontal="true"
-        android:padding="16dp">
+        android:padding="16dp"
+        android:visibility="invisible">
 
         <TextView
             android:layout_width="wrap_content"
@@ -88,6 +89,30 @@
 
     </LinearLayout>
 
+
+    <LinearLayout
+        android:id="@+id/url_layout"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/IP_layout"
+        android:layout_centerHorizontal="true"
+        android:padding="16dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Server URL"/>
+        <EditText
+            android:id="@+id/url"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/server_url"
+            android:inputType="textWebEmailAddress"
+            android:autofillHints="192" />
+    </LinearLayout>
+
+
     <SurfaceView
         android:id="@+id/surfaceView"
         android:layout_width="wrap_content"
@@ -117,7 +142,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/save"
-        android:layout_below="@id/url"
+        android:layout_below="@id/url_layout"
         android:id="@+id/saveBtn"
         android:layout_marginTop="10dp"
         android:layout_centerHorizontal="true"
@@ -129,7 +154,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/browse"
-        android:layout_below="@id/url"
+        android:layout_below="@id/url_layout"
         android:id="@+id/browseBtn"
         android:layout_marginTop="10dp"
         android:layout_centerHorizontal="true"

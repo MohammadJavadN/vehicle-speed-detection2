@@ -47,9 +47,9 @@ public class ServerSpeedDetector {
 
     protected Bitmap bitmap;
     public final OkHttpClient client = new OkHttpClient.Builder()
-            .connectTimeout(10, TimeUnit.SECONDS)
-            .writeTimeout(30, TimeUnit.SECONDS)
-            .readTimeout(30, TimeUnit.SECONDS)
+            .connectTimeout(0, TimeUnit.SECONDS)
+            .writeTimeout(0, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS)
             .build();
 
     // Function to send a POST request to initialize the server model
@@ -82,6 +82,7 @@ public class ServerSpeedDetector {
                 } else {
                     // Handle the case where initialization failed
                     Log.e(TAG, "Server initialization failed: " + response.message());
+                    Log.e(TAG, "Server initialization failed: " + response.code() + " " + response.message());
                 }
             }
         });
