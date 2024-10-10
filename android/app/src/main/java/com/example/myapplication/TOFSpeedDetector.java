@@ -111,7 +111,7 @@ public class TOFSpeedDetector extends SpeedDetector {
             return;
         }
 
-        bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+        bitmap = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888); // todo: comment this line
         Utils.matToBitmap(frames.get((frameNum - fq) % fq).clone(), bitmap);
 //        Utils.matToBitmap(frame, bitmap);
         double sx, sy;
@@ -256,6 +256,12 @@ public class TOFSpeedDetector extends SpeedDetector {
             // Draw label text
 
             speed = updateObjectsSpeed(frameNum, id, speed);
+            List<DetectedObject.Label> labels = object.getLabels();
+            if (!labels.isEmpty()) {
+                if (Float.parseFloat(labels.get(0).getText()) != -1)
+                    speed = (int) Float.parseFloat(labels.get(0).getText());
+            }
+
             draw(canvas, scaledBBox, speed, id);
 
         }

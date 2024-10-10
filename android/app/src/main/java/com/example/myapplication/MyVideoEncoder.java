@@ -90,8 +90,11 @@ public class MyVideoEncoder {
     }
 
     public void encodeFrame(Bitmap bitmap) {
+        if (bitmap == null) {
+            return;
+        }
         // Get input buffer index
-        int inputBufferIndex = encoder.dequeueInputBuffer(0); // TODO: 23.04.24 0 -> -1
+        int inputBufferIndex = encoder.dequeueInputBuffer(30); // TODO: 23.04.24 0 -> -1
         if (inputBufferIndex >= 0) {
             // Get input buffer
             ByteBuffer inputBuffer = encoder.getInputBuffer(inputBufferIndex);

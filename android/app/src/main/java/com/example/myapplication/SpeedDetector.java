@@ -178,7 +178,7 @@ public abstract class SpeedDetector {
         for (int i = 0; i < N; i++) {
             totalSum += speeds[i];
         }
-        return totalSum / N;
+        return Math.min(totalSum / N, 120);
 
     }
 
@@ -225,7 +225,7 @@ public abstract class SpeedDetector {
             }
         }
 
-        return mean2;
+        return Math.min(mean2, 120);
     }
 
     public void draw(Canvas canvas, Rect rect, float speed, int id) {

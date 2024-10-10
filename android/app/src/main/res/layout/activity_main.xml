@@ -239,6 +239,12 @@
         android:layout_marginTop="15dp"
         android:orientation="vertical"
         android:layout_centerHorizontal="true">
+        <RadioButton
+            android:id="@+id/radioServer_speed"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/server_speed"
+            />
 
         <RadioButton
             android:id="@+id/radioServer"

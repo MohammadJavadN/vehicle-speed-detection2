@@ -5,6 +5,7 @@ import numpy as np
 
 from ultralytics import YOLO
 from speed_detector import detect_speeds
+from speed_estimator import twopoints_speed
 from flask import Flask, request, Response
 
 app = Flask(__name__)
@@ -37,7 +38,30 @@ def process_frame2(im0):
         rect_i = obj.boxes.xyxy[0].cpu().numpy()
         x1, y1, x2, y2 = map(int, rect_i)
 
-        list_of_objs.append({'id': id, 'bbox': [x1, y1, x2, y2]})
+        list_of_objs.append({'id': id, 'bbox': [x1, y1, x2, y2], 'speed': -1.0})
+
+    return list_of_objs
+
+
+def process_frame3(im0):
+    global cnt, model
+    tracks = model.track(im0, persist=True, show=False, verbose=False)
+    cnt += 1
+    list_of_objs = []
+
+    for obj in tracks[0]:
+        id = obj.boxes.id
+
+        if not id:
+            continue
+        id = int(id[0])
+
+        rect_i = obj.boxes.xyxy[0].cpu().numpy()
+        x1, y1, x2, y2 = map(int, rect_i)
+
+        speed = twopoints_speed(id, x1, y1, abs(x2-x1), abs(y2-y1))
+
+        list_of_objs.append({'id': id, 'bbox': [x1, y1, x2, y2], 'speed': speed})
 
     return list_of_objs
 
@@ -80,6 +104,29 @@ def process_video_frame():
 
         # Process the frame
         processed_data = process_frame2(frame)
+
+        # Convert the result to JSON format
+        result_json = json.dumps(processed_data)
+
+        # Send back the result as a JSON response
+        return Response(result_json, mimetype='application/json')
+    except Exception as e:
+        return str(e), 500
+
+
+# Route to receive video frames and send bounding box results back
+@app.route('/process_frame3', methods=['POST'])
+def process_video_frame3():
+    try:
+        # Read the frame data from the request
+        frame_stream = request.files['frame'].read()
+
+        # Convert the frame bytes into an OpenCV image
+        frame_array = np.frombuffer(frame_stream, np.uint8)
+        frame = cv2.imdecode(frame_array, cv2.IMREAD_COLOR)
+
+        # Process the frame
+        processed_data = process_frame3(frame)
 
         # Convert the result to JSON format
         result_json = json.dumps(processed_data)

@@ -11,4 +11,6 @@
     <string name="top_view">Top View</string>
     <string name="server">Server</string>
     <string name="local">Local</string>
+    <string name="server_url">http://192.168.43.226:5000/</string>
+    <string name="server_speed">server speed</string>
 </resources>

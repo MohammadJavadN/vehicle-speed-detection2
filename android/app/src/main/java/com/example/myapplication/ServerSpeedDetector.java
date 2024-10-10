@@ -37,12 +37,18 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class ServerSpeedDetector {
-    public ServerSpeedDetector(String url) {
+    public ServerSpeedDetector(String url, boolean withSpeed) {
         SERVER_URL = url;
+        if (withSpeed)
+            PROCESS_URL = SERVER_URL + "process_frame3";
+        else
+            PROCESS_URL = SERVER_URL + "process_frame";
+
         initializeServerModel();
     }
 
     private final String SERVER_URL; // = "http://192.168.43.226:5000/";
+    private final String PROCESS_URL;
     private static final String TAG = "ServerSpeedDetector";
 
     protected Bitmap bitmap;
@@ -103,7 +109,7 @@ public class ServerSpeedDetector {
 
         // Create request object
         Request request = new Request.Builder()
-                .url(SERVER_URL + "process_frame") // Replace with your server's IP and port
+                .url(PROCESS_URL)
                 .post(requestBody)
                 .build();
 
@@ -128,6 +134,7 @@ public class ServerSpeedDetector {
 
             // Labels are empty for now, you can adjust if the server starts sending them
             List<DetectedObject.Label> labels = new ArrayList<>();
+            labels.add(new DetectedObject.Label(Float.toString(obj.speed), 1, 0));
 
             // Construct the DetectedObject
             DetectedObject detectedObject = new DetectedObject(bbox, trackingId, labels);
@@ -140,6 +147,7 @@ public class ServerSpeedDetector {
     public class ServerDetectedObject {
         public int id;
         public int[] bbox;  // bbox[0]: left, bbox[1]: top, bbox[2]: right, bbox[3]: bottom
+        public float speed;
     }
     private byte[] matToByteArray(Mat frame) {
         MatOfByte matOfByte = new MatOfByte();

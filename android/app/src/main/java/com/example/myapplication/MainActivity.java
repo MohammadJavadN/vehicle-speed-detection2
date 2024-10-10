@@ -248,7 +248,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
     Interpreter interpreter;
     private static String outCSVPath = "/sdcard/Download/out.csv";
-    private boolean isServer, isTOF, isSide;
+    private boolean isServer, isTOF, isSide, serverWithSpeed;
 
     private static final int PERMISSION_REQUEST_CODE = 100;
 
@@ -475,6 +475,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 //                            runOnUiThread(() -> {
                             if (canvas != null) {
                                 surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                                try {
+                                    Bitmap bitmap1 = Bitmap.createBitmap(canvas.getWidth(), canvas.getHeight(), Bitmap.Config.ARGB_8888);
+                                    canvas.drawBitmap(bitmap1, 0, 0, null);
+                                    out.encodeFrame(bitmap1);
+                                } catch (Exception e) {
+                                    System.out.println("*** save video failed: " + e.toString());
+                                }
                             }
 //                            });
                             processImage2();
@@ -503,8 +510,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         runOnUiThread(() -> {
                             if (canvas != null) {
                                 surfaceView.getHolder().unlockCanvasAndPost(canvas);
-//                                if (isOutAvailable)
-//                                    out.encodeFrame(surfaceView.getDrawingCache());
                             }
                         });
                         processImage2();
@@ -610,6 +615,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
 
                 isServer = ((RadioButton) findViewById(R.id.radioServer)).isChecked();
+                serverWithSpeed = ((RadioButton) findViewById(R.id.radioServer_speed)).isChecked();
+                if (serverWithSpeed)
+                    isServer = true;
                 if (isServer) {
                     DETECTION_MODE = ObjectDetectorOptions.STREAM_MODE;
                     String ip1, ip2, ip3, ip4, port;
@@ -620,7 +628,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     port = ((EditText) findViewById(R.id.port)).getText().toString();
                     serverUrl = "http://" + ip1 + "." + ip2 + "." + ip3 + "." + ip4 + ":" + port + "/";
                     serverUrl = ((EditText) findViewById(R.id.url)).getText().toString();
-                    serverSpeedDetector = new ServerSpeedDetector(serverUrl);
+                    serverSpeedDetector = new ServerSpeedDetector(serverUrl, serverWithSpeed);
                 }
                 isTOF = ((RadioButton) findViewById(R.id.radioASE)).isChecked();
                 isSide = ((RadioButton) findViewById(R.id.radioSide)).isChecked();
@@ -630,6 +638,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     FRAME_STEP = 4;
                 } else if (isSide) {
                     inVideoPath = "/sdcard/Download/side_vid.mp4"; // side
+                    inVideoPath = "/sdcard/Download/side_bus.mp4"; // side
+                    inVideoPath = "/sdcard/Download/side_van.mp4"; // side
+                    inVideoPath = "/sdcard/Download/side_L90.mp4"; // side
                     FRAME_STEP = 1;
                 } else {
                     FRAME_STEP = 1;
