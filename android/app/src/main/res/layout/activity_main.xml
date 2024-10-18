@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
@@ -8,169 +7,181 @@
     tools:context=".MainActivity">
 
     <TextView
+        android:id="@+id/title"
         android:layout_width="match_parent"
         android:layout_height="40dp"
-        android:text="@string/title"
-        android:id="@+id/title"
-        android:textSize="30sp"
-        android:textAlignment="center"
         android:layout_margin="20dp"
-        />
+        android:text="@string/title"
+        android:textAlignment="center"
+        android:textSize="30sp" />
 
 
     <LinearLayout
         android:id="@+id/parameters"
-        android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/title"
-        android:layout_centerHorizontal="true">
-
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="alpha:"/>
-    <EditText
-        android:id="@+id/alpha"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="30"
-        android:inputType="number" />
+        android:layout_centerHorizontal="true"
+        android:orientation="horizontal">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=", beta:"/>
+            android:text="alpha:" />
+
+        <EditText
+            android:id="@+id/alpha"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="number"
+            android:text="30" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=", beta:" />
+
         <EditText
             android:id="@+id/beta"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="45"
-            android:inputType="number" />
+            android:inputType="number"
+            android:text="45" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=", focal length:"/>
+            android:text=", focal length:" />
+
         <EditText
             android:id="@+id/f"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="50.0"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal"
+            android:text="50.0" />
 
     </LinearLayout>
 
     <LinearLayout
         android:id="@+id/parameters2"
-        android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/parameters"
-        android:layout_centerHorizontal="true">
+        android:layout_centerHorizontal="true"
+        android:orientation="horizontal">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="XR:"/>
+            android:text="XR:" />
+
         <EditText
             android:id="@+id/XR"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="10.0"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal"
+            android:text="10.0" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=", YR:"/>
+            android:text=", YR:" />
+
         <EditText
             android:id="@+id/YR"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="20.0"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal"
+            android:text="20.0" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=", HR:"/>
+            android:text=", HR:" />
+
         <EditText
             android:id="@+id/HR"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="30.0"
-            android:inputType="numberDecimal" />
+            android:inputType="numberDecimal"
+            android:text="30.0" />
     </LinearLayout>
 
 
     <LinearLayout
         android:id="@+id/IP_layout"
-        android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/title"
         android:layout_centerHorizontal="true"
+        android:orientation="horizontal"
         android:visibility="invisible">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Server IP:Port:"/>
+            android:text="Server IP:Port:" />
+
         <EditText
             android:id="@+id/ip1"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="192"
+            android:autofillHints="192"
             android:inputType="number"
-            android:autofillHints="192" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="."/>
-        <EditText
-            android:id="@+id/ip2"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="168"
-            android:inputType="number"
-            android:autofillHints="168" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="."/>
-        <EditText
-            android:id="@+id/ip3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="43"
-            android:inputType="number"
-            android:autofillHints="43" />
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="."/>
-        <EditText
-            android:id="@+id/ip4"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="226"
-            android:inputType="number"
-            android:autofillHints="226" />
+            android:text="192" />
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=":"/>
+            android:text="." />
+
+        <EditText
+            android:id="@+id/ip2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:autofillHints="168"
+            android:inputType="number"
+            android:text="168" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="." />
+
+        <EditText
+            android:id="@+id/ip3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:autofillHints="43"
+            android:inputType="number"
+            android:text="43" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="." />
+
+        <EditText
+            android:id="@+id/ip4"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:autofillHints="226"
+            android:inputType="number"
+            android:text="226" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=":" />
 
         <EditText
             android:id="@+id/port"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:autofillHints="5000"
             android:hint="Port"
-            android:text="5000"
             android:inputType="number"
-            android:autofillHints="5000" />
+            android:text="5000" />
         />
 
     </LinearLayout>
@@ -178,23 +189,24 @@
 
     <LinearLayout
         android:id="@+id/url_layout"
-        android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/parameters2"
-        android:layout_centerHorizontal="true">
+        android:layout_centerHorizontal="true"
+        android:orientation="horizontal">
 
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Server URL"/>
+            android:text="Server URL" />
+
         <EditText
             android:id="@+id/url"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/server_url"
+            android:autofillHints="192"
             android:inputType="textWebEmailAddress"
-            android:autofillHints="192" />
+            android:text="@string/server_url" />
     </LinearLayout>
 
 
@@ -224,26 +236,26 @@
         android:scaleType="fitXY" />
 
     <Button
+        android:id="@+id/saveBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/save"
         android:layout_below="@id/url_layout"
-        android:id="@+id/saveBtn"
-        android:layout_marginTop="10dp"
         android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
         android:onClick="saveCsv"
-        android:visibility="invisible"/>
+        android:text="@string/save"
+        android:visibility="invisible" />
 
 
     <Button
+        android:id="@+id/browseBtn"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:text="@string/browse"
         android:layout_below="@id/url_layout"
-        android:id="@+id/browseBtn"
-        android:layout_marginTop="10dp"
         android:layout_centerHorizontal="true"
-        android:onClick="browseVideo"/>
+        android:layout_marginTop="10dp"
+        android:onClick="browseVideo"
+        android:text="@string/browse" />
 
     <Switch
         android:id="@+id/saveSw"
@@ -256,9 +268,8 @@
         android:layout_marginTop="1dp"
         android:layout_marginRight="10dp"
         android:text="@string/save_output_txt"
-        tools:ignore="UseSwitchCompatOrMaterialXml"
         android:visibility="invisible"
-        />
+        tools:ignore="UseSwitchCompatOrMaterialXml" />
 
     <View
         android:id="@+id/circle1"
@@ -321,30 +332,28 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/saveBtn"
+        android:layout_centerHorizontal="true"
         android:layout_marginTop="10dp"
-        android:orientation="vertical"
-        android:layout_centerHorizontal="true">
+        android:orientation="vertical">
+
         <RadioButton
             android:id="@+id/radioServer_speed"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/server_speed"
-            />
+            android:text="@string/server_speed" />
 
         <RadioButton
             android:id="@+id/radioServer"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/server"
-            />
+            android:text="@string/server" />
 
         <RadioButton
             android:id="@+id/radioLocal"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/local"
             android:checked="true"
-            />
+            android:text="@string/local" />
 
     </RadioGroup>
 
@@ -354,17 +363,16 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/radioGroupServer"
+        android:layout_centerHorizontal="true"
         android:layout_marginTop="10dp"
-        android:orientation="vertical"
-        android:layout_centerHorizontal="true">
+        android:orientation="vertical">
 
         <RadioButton
             android:id="@+id/radioASE"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/ase"
             android:checked="true"
-            />
+            android:text="@string/ase" />
 
         <RadioButton
             android:id="@+id/radioSide"

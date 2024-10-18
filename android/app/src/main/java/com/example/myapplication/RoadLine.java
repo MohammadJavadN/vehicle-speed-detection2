@@ -20,7 +20,9 @@ import org.opencv.core.Point;
 
 public class RoadLine {
     public static float globalCoeff = 1810f;
+    private static float viewW, viewH;
     private final Paint linePaint = new Paint();
+    private final RectF inside = new RectF(0.1f, 0.1f, 0.9f, 0.9f);
     GraphicOverlay overlay;
     private Point point1, point2, point3, point4;
     private Point P1, P2, normalLineVector;
@@ -77,8 +79,6 @@ public class RoadLine {
         circle4.setY(1552f / 1266 * viewH);
 
     }
-
-    private static float viewW, viewH;
 
     public void initializeCircles(View circle1, View circle2, View circle3, View circle4) {
         linePaint.setColor(Color.GREEN);
@@ -211,8 +211,6 @@ public class RoadLine {
         return new Point(speed.x * cosine, speed.y * cosine);
     }
 
-    private final RectF inside = new RectF(0.1f, 0.1f, 0.9f, 0.9f);
-
     public Point calculateSignSpeed(RectF rect1, RectF rect2, float frames) {
         RectF unionR = new RectF(
                 min(rect1.left, rect2.left),
@@ -257,7 +255,8 @@ public class RoadLine {
     private double norm(Point p) {
         return sqrt(pow(p.x, 2) + pow(p.y, 2));
     }
-    private double norm2(Point p){
+
+    private double norm2(Point p) {
         return pow(p.x, 2) + pow(p.y, 2);
     }
 

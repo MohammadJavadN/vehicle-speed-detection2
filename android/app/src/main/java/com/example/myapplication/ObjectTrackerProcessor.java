@@ -15,9 +15,6 @@ import com.google.mlkit.vision.objects.ObjectDetection;
 import com.google.mlkit.vision.objects.ObjectDetector;
 import com.google.mlkit.vision.objects.ObjectDetectorOptionsBase;
 
-//import org.opencv.tracking.Tracker;
-//import org.opencv.tracking.TrackerKCF; // Import the desired tracking algorithm
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -111,7 +108,7 @@ public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObj
                 prevObj.updateBoxAndSpeed(
                         object.getBoundingBox(),
                         frameNum,
-                        Float.parseFloat(labels.get(labels.size()-1).getText())
+                        Float.parseFloat(labels.get(labels.size() - 1).getText())
                 );
                 prevObj.frameNum = frameNum;
                 break;
@@ -134,7 +131,7 @@ public class ObjectTrackerProcessor extends VisionProcessorBase<List<DetectedObj
                     new MyDetectedObject(
                             object.getBoundingBox(),
                             frameNum,
-                            Float.parseFloat(labels.get(labels.size()-1).getText())
+                            Float.parseFloat(labels.get(labels.size() - 1).getText())
                     )
             );
     }

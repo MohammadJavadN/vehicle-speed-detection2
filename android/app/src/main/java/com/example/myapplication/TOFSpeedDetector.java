@@ -200,8 +200,8 @@ public class TOFSpeedDetector extends SpeedDetector {
                             new android.graphics.Rect(
                                     (int) (rectI.left + dfx),
                                     (int) (rectI.top + dfy),
-                                    (int) (rectI.left + rectI.width()),
-                                    (int) (rectI.top + rectI.height())
+                                    rectI.left + rectI.width(),
+                                    rectI.top + rectI.height()
                             ),
                             id
                     );
@@ -211,8 +211,8 @@ public class TOFSpeedDetector extends SpeedDetector {
                             new android.graphics.Rect(
                                     (int) (rectI.left + dfx),
                                     (int) (rectI.top + dfy),
-                                    (int) (rectI.left + rectI.width()),
-                                    (int) (rectI.top + rectI.height())
+                                    rectI.left + rectI.width(),
+                                    rectI.top + rectI.height()
                             ),
                             id
                     );
@@ -497,8 +497,8 @@ public class TOFSpeedDetector extends SpeedDetector {
                         new android.graphics.Rect(
                                 (int) (rectI.left + dfx),
                                 (int) (rectI.top + dfy),
-                                (int) (rectI.left + rectI.width()),
-                                (int) (rectI.top + rectI.height())
+                                rectI.left + rectI.width(),
+                                rectI.top + rectI.height()
                         ),
                         id
                 );

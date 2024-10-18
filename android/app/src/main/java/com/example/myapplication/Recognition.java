@@ -35,16 +35,32 @@ public class Recognition {
         return labelId;
     }
 
+    public void setLabelId(int labelId) {
+        this.labelId = labelId;
+    }
+
     public String getLabelName() {
         return labelName;
+    }
+
+    public void setLabelName(String labelName) {
+        this.labelName = labelName;
     }
 
     public Float getLabelScore() {
         return labelScore;
     }
 
+    public void setLabelScore(Float labelScore) {
+        this.labelScore = labelScore;
+    }
+
     public Float getConfidence() {
         return confidence;
+    }
+
+    public void setConfidence(Float confidence) {
+        this.confidence = confidence;
     }
 
     public RectF getLocation() {
@@ -53,22 +69,6 @@ public class Recognition {
 
     public void setLocation(RectF location) {
         this.location = location;
-    }
-
-    public void setLabelName(String labelName) {
-        this.labelName = labelName;
-    }
-
-    public void setLabelId(int labelId) {
-        this.labelId = labelId;
-    }
-
-    public void setLabelScore(Float labelScore) {
-        this.labelScore = labelScore;
-    }
-
-    public void setConfidence(Float confidence) {
-        this.confidence = confidence;
     }
 
     @Override

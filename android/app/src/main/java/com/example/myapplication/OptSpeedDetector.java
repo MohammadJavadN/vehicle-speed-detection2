@@ -40,8 +40,12 @@ import java.util.Map;
 
 public class OptSpeedDetector extends SpeedDetector {
 
-    final boolean isSide;
     final static int fq = 2;
+    private static final Map<Integer, Rect> twoPointsSpeed = new HashMap<>();
+    static List<List<Integer>> gridSpeeds;
+    final boolean isSide;
+    float[] laneSpeeds = {0, 0, 0, 0};
+    Mat mask;
     private int imW;
     private int imH;
     private int frameNum = 0;
@@ -50,22 +54,10 @@ public class OptSpeedDetector extends SpeedDetector {
     private Size winSize;
     private SpeedPredictionTopViewNoPlateModel speedPredictionTopViewNoPlateModel;
     private SpeedPredictionModelSideView speedPredictionModelSideView;
-
     private TensorBuffer topSpeedInputFeature2;
     private TensorBuffer sideSpeedInputFeature;
     private List<Mat> grayFrames;
-    private void init() {
-        grayFrames = new ArrayList<>(fq);
-        for (int i = 0; i < fq; i++) {
-            grayFrames.add(new Mat());
-        }
-        winSize = new Size(10, 10);
-        criteria = new TermCriteria(TermCriteria.COUNT + TermCriteria.EPS,
-                200,
-                0.001);
-        prevGray = null;
-        frameNum = 0;
-    }
+
     public OptSpeedDetector(TensorBuffer sideSpeedInputFeature, SpeedPredictionModelSideView speedPredictionModelSideView) {
         super(fq);
         this.sideSpeedInputFeature = sideSpeedInputFeature;
@@ -80,6 +72,76 @@ public class OptSpeedDetector extends SpeedDetector {
         this.speedPredictionTopViewNoPlateModel = speedPredictionTopViewNoPlateModel;
         isSide = false;
         init();
+    }
+
+    public static int getTwoPointsSpeed(int id, Rect rect2) {
+        int speed = -1;
+        int x1, y1, w1, h1;
+        int x2, y2, w2, h2;
+        if (twoPointsSpeed.containsKey(id)) {
+            Rect rect1 = twoPointsSpeed.get(id);
+            assert rect1 != null;
+            x1 = rect1.left;
+            y1 = rect1.top;
+            w1 = rect1.width();
+            h1 = rect1.height();
+            x2 = rect2.left;
+            y2 = rect2.top;
+            w2 = rect2.width();
+            h2 = rect2.height();
+            speed = getTwoPointsSpeed2(x1, y1, w1, h1, x2, y2, w2, h2);
+        }
+        twoPointsSpeed.put(id, rect2);
+        return speed;
+    }
+
+    private static int getTwoPointsSpeed2(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
+        double dPixel = Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2));
+        double w = (double) (w1 + w2) / 2;
+        double h = (double) (h1 + h2) / 2;
+        double ix = w / h;
+        double ixp = ix / 2.9;
+        double ppm = (w * ixp) / 4.2;
+        double dMeters = dPixel / ppm;
+        double timeConstant = 30 * 3.6;
+        double speed = dMeters * timeConstant * 4;
+        return (int) speed;
+    }
+
+    public static int getGridSpeed(Rect rect) {
+        System.out.println("@@@@@@ rect= " + rect);
+
+        int sumSpeed = 0;
+        int cnt = 0;
+        for (List<Integer> gridSpeed : gridSpeeds) {
+            int x = gridSpeed.get(0);
+            int y = gridSpeed.get(1);
+            if (rect.contains(x, y)) {
+                cnt++;
+                sumSpeed += gridSpeed.get(2);
+            }
+        }
+
+        if (cnt == 0)
+            return 0;
+        return sumSpeed / cnt;
+    }
+
+    public static void gridSpeedsInit() {
+        gridSpeeds = new ArrayList<>();
+    }
+
+    private void init() {
+        grayFrames = new ArrayList<>(fq);
+        for (int i = 0; i < fq; i++) {
+            grayFrames.add(new Mat());
+        }
+        winSize = new Size(10, 10);
+        criteria = new TermCriteria(TermCriteria.COUNT + TermCriteria.EPS,
+                200,
+                0.001);
+        prevGray = null;
+        frameNum = 0;
     }
 
     public void detectSpeeds(Mat frame, List<DetectedObject> detectedObjects, Canvas canvas) {
@@ -167,7 +229,7 @@ public class OptSpeedDetector extends SpeedDetector {
                     (int) (rectI.bottom * sy)
             );
             int twoSpeed = getTwoPointsSpeed(id, rectI);
-            System.out.println("### twoSpeed= "+ twoSpeed + ", speed= " + speed);
+            System.out.println("### twoSpeed= " + twoSpeed + ", speed= " + speed);
             if (!isSide)
                 twoSpeed = speed;
             if (twoSpeed != -1)
@@ -193,61 +255,8 @@ public class OptSpeedDetector extends SpeedDetector {
 
     }
 
-    private static final Map<Integer, Rect> twoPointsSpeed = new HashMap<>();
-
-    public static int getTwoPointsSpeed(int id, Rect rect2) {
-        int speed = -1;
-        int x1, y1, w1, h1;
-        int x2, y2, w2, h2;
-        if (twoPointsSpeed.containsKey(id)) {
-            Rect rect1 = twoPointsSpeed.get(id);
-            assert rect1 != null;
-            x1 = rect1.left;
-            y1 = rect1.top;
-            w1 = rect1.width();
-            h1 = rect1.height();
-            x2 = rect2.left;
-            y2 = rect2.top;
-            w2 = rect2.width();
-            h2 = rect2.height();
-            speed = getTwoPointsSpeed2(x1, y1, w1, h1, x2, y2, w2, h2);
-        }
-        twoPointsSpeed.put(id, rect2);
-        return speed;
-    }
-
-    private static int getTwoPointsSpeed2(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
-        double dPixel = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
-        double w = (double) (w1 + w2) / 2;
-        double h = (double) (h1 + h2) / 2;
-        double ix = w / h;
-        double ixp = ix / 2.9;
-        double ppm = (w * ixp) / 4.2;
-        double dMeters = dPixel / ppm;
-        double timeConstant = 30 * 3.6;
-        double speed = dMeters * timeConstant * 4;
-        return (int) speed;
-    }
-    public static int getGridSpeed(Rect rect) {
-        System.out.println("@@@@@@ rect= " + rect);
-
-        int sumSpeed = 0;
-        int cnt = 0;
-        for (List<Integer> gridSpeed: gridSpeeds) {
-            int x = gridSpeed.get(0);
-            int y = gridSpeed.get(1);
-            if (rect.contains(x, y)) {
-                cnt++;
-                sumSpeed += gridSpeed.get(2);
-            }
-        }
-
-        if (cnt == 0)
-            return 0;
-        return sumSpeed/cnt;
-    }
     public int getLane(int x, int y) {
-        if (x < 0.307*imW) {
+        if (x < 0.307 * imW) {
             return 1;
         }
         if (x < 0.49 * imW + 0.37 * y) {
@@ -258,12 +267,7 @@ public class OptSpeedDetector extends SpeedDetector {
         }
         return 4;
     }
-    float[] laneSpeeds = {0, 0, 0, 0};
-    static List<List<Integer>> gridSpeeds;
-    public static void gridSpeedsInit() {
-        gridSpeeds = new ArrayList<>();
-    }
-    Mat mask;
+
     public void predictTop(Mat frameGray, Mat frame) {
 
         for (int i = 0; i < 4; i++) {
@@ -275,7 +279,7 @@ public class OptSpeedDetector extends SpeedDetector {
 
             MatOfPoint prevPtsMat_ = new MatOfPoint();
 
-            Imgproc.goodFeaturesToTrack(prevGray, prevPtsMat_,150,0.1,5, new Mat(),7,false,0.04);
+            Imgproc.goodFeaturesToTrack(prevGray, prevPtsMat_, 150, 0.1, 5, new Mat(), 7, false, 0.04);
 
             MatOfPoint2f prevPtsMat = new MatOfPoint2f(prevPtsMat_.toArray());
 
@@ -294,7 +298,7 @@ public class OptSpeedDetector extends SpeedDetector {
             if (showOpt)
                 mask = Mat.zeros(frame.size(), frame.type());
 
-            for (int i = 0; i<StatusArr.length ; i++ ) {
+            for (int i = 0; i < StatusArr.length; i++) {
                 if (StatusArr[i] == 1) {
                     Point newPt = p0Arr[i];
 
@@ -323,7 +327,7 @@ public class OptSpeedDetector extends SpeedDetector {
                         System.out.println("****** input_data" + Arrays.toString(input_data));
                         System.out.println("****** imW" + imW);
                         float predictedSpeed = predictSpeedNoPlate(input_data, false);
-                        predictedSpeed = (float) (predictedSpeed*Math.pow(1920/imW, 0.08)*1.2);
+                        predictedSpeed = (float) (predictedSpeed * Math.pow(1920 / imW, 0.08) * 1.2);
                         laneSpeeds[lane - 1] += predictedSpeed;
                         cntOfLaneSpeeds[lane - 1]++;
                         List<Integer> gridSpeed = new ArrayList<>();
@@ -339,7 +343,7 @@ public class OptSpeedDetector extends SpeedDetector {
 
             for (int lane = 0; lane < 4; lane++) {
                 // Draw lines and circles
-                int speed = (int) (laneSpeeds[lane]/cntOfLaneSpeeds[lane]);
+                int speed = (int) (laneSpeeds[lane] / cntOfLaneSpeeds[lane]);
 
                 if (speed < 5)
                     speed = 0;
@@ -349,8 +353,8 @@ public class OptSpeedDetector extends SpeedDetector {
             if (showOpt)
                 Core.add(frame, mask, frame);
 
-        } catch (Exception e){
-            System.out.println(e.toString());
+        } catch (Exception e) {
+            System.out.println(e);
         }
 
 //        prevGray = frameGray.clone();
@@ -367,7 +371,7 @@ public class OptSpeedDetector extends SpeedDetector {
 
             MatOfPoint prevPtsMat_ = new MatOfPoint();
 
-            Imgproc.goodFeaturesToTrack(prevGray, prevPtsMat_,150,0.1,5, new Mat(),7,false,0.04);
+            Imgproc.goodFeaturesToTrack(prevGray, prevPtsMat_, 150, 0.1, 5, new Mat(), 7, false, 0.04);
 
             MatOfPoint2f prevPtsMat = new MatOfPoint2f(prevPtsMat_.toArray());
 
@@ -386,7 +390,7 @@ public class OptSpeedDetector extends SpeedDetector {
             if (showOpt)
                 mask = Mat.zeros(frame.size(), frame.type());
 
-            for (int i = 0; i<StatusArr.length ; i++ ) {
+            for (int i = 0; i < StatusArr.length; i++) {
                 if (StatusArr[i] == 1) {
                     Point newPt = p0Arr[i];
 
@@ -422,7 +426,7 @@ public class OptSpeedDetector extends SpeedDetector {
                 }
             }
             // Draw lines and circles
-            laneSpeeds[0] = (int) (laneSpeeds[0]/cntOfLaneSpeeds[0]);
+            laneSpeeds[0] = (int) (laneSpeeds[0] / cntOfLaneSpeeds[0]);
 
             if (laneSpeeds[0] < 20)
                 laneSpeeds[0] = 0;
@@ -430,8 +434,8 @@ public class OptSpeedDetector extends SpeedDetector {
             if (showOpt)
                 Core.add(frame, mask, frame);
 
-        }catch (Exception e){
-            System.out.println(e.toString());
+        } catch (Exception e) {
+            System.out.println(e);
         }
 
 //        prevGray = frameGray.clone();
@@ -440,7 +444,7 @@ public class OptSpeedDetector extends SpeedDetector {
     }
 
     private float predictSpeedNoPlate(double[] inputData, boolean sideView) {
-        if (sideView){
+        if (sideView) {
             double MEAN_A = 936.88328756;
             double MEAN_B = 256.01818182;
             double MEAN_P = 36.73230519;
@@ -457,8 +461,7 @@ public class OptSpeedDetector extends SpeedDetector {
             SpeedPredictionModelSideView.Outputs outputs = speedPredictionModelSideView.process(sideSpeedInputFeature);
             TensorBuffer outputFeature0 = outputs.getOutputFeature0AsTensorBuffer();
             return outputFeature0.getFloatValue(0);
-        }
-        else {
+        } else {
             double MEAN_A = 917.25111607;
             double MEAN_B = 393.7375372;
             double MEAN_P = 48.96527362;
@@ -477,7 +480,6 @@ public class OptSpeedDetector extends SpeedDetector {
             return outputFeature0.getFloatValue(0);
         }
     }
-
 
 
 }

@@ -5,19 +5,11 @@ import android.media.MediaCodec;
 import android.media.MediaCodecInfo;
 import android.media.MediaFormat;
 import android.media.MediaMuxer;
-import android.os.Environment;
-
-import org.opencv.android.Utils;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.Size;
-import org.opencv.videoio.VideoWriter;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 
 public class MyVideoEncoder {
 //    private VideoWriter videoWriter;
@@ -47,10 +39,10 @@ public class MyVideoEncoder {
 
 
     private final MediaCodec encoder;
+    private final File outputFile;
     private MediaMuxer muxer;
     private int trackIndex;
     private boolean muxerStarted;
-    private final File outputFile;
 
     public MyVideoEncoder(int width, int height, int frameRate, String outputPath) throws IOException {
         // Create MediaFormat for video

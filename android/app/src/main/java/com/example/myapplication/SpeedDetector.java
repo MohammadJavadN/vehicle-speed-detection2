@@ -41,12 +41,15 @@ public abstract class SpeedDetector {
     protected final List<Mat> frames;
     protected final List<List<DetectedObject>> listOfObjList;
     protected final boolean showOpt = false;
+    final int N = 8;
     private final Paint rectPaint;
     private final Paint textPaint;
     private final Paint[] labelPaints;
     private final Paint[] boxPaints;
     private final Paint[] textPaints;
     protected Bitmap bitmap;
+    float[] speeds = new float[N];
+    HashMap<Integer, ArrayList<Float>> carSpeeds = new HashMap<>();
     private int idGen = 1;
 
     public SpeedDetector(int fq) {
@@ -152,9 +155,6 @@ public abstract class SpeedDetector {
         return (int) meanSpeed(Objects.requireNonNull(carSpeeds.get(id)));
     }
 
-    final int N = 8;
-    float[] speeds = new float[N];
-    HashMap<Integer, ArrayList<Float>> carSpeeds = new HashMap<>();
     private float meanSpeed(ArrayList<Float> carSpeeds) {
         if (carSpeeds.isEmpty()) return 0; // handle empty map case
 

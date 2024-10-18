@@ -64,6 +64,7 @@ public class MyDetectedObject extends DetectedObject {
         objectsSpeed.put(id, new HashMap<>());
         this.speed = speed;
     }
+
     public static HashMap<Integer, HashMap<Integer, Float>> getObjectsSpeed() {
         return objectsSpeed;
     }

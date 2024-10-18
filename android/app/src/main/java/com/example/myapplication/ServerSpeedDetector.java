@@ -37,6 +37,15 @@ import okhttp3.RequestBody;
 import okhttp3.Response;
 
 public class ServerSpeedDetector {
+    private static final String TAG = "ServerSpeedDetector";
+    public final OkHttpClient client = new OkHttpClient.Builder()
+            .connectTimeout(0, TimeUnit.SECONDS)
+            .writeTimeout(0, TimeUnit.SECONDS)
+            .readTimeout(0, TimeUnit.SECONDS)
+            .build();
+    private final String SERVER_URL; // = "http://192.168.43.226:5000/";
+    private final String PROCESS_URL;
+    protected Bitmap bitmap;
     public ServerSpeedDetector(String url, boolean withSpeed) {
         SERVER_URL = url;
         if (withSpeed)
@@ -47,16 +56,33 @@ public class ServerSpeedDetector {
         initializeServerModel();
     }
 
-    private final String SERVER_URL; // = "http://192.168.43.226:5000/";
-    private final String PROCESS_URL;
-    private static final String TAG = "ServerSpeedDetector";
+    // Parse JSON response manually and convert it to a List of DetectedObjects
+    public static List<DetectedObject> parseDetectedObjects(String jsonResponse) {
+        Gson gson = new Gson();
+        Type listType = new TypeToken<List<ServerDetectedObject>>() {
+        }.getType();
+        List<ServerDetectedObject> serverObjects = gson.fromJson(jsonResponse, listType);
 
-    protected Bitmap bitmap;
-    public final OkHttpClient client = new OkHttpClient.Builder()
-            .connectTimeout(0, TimeUnit.SECONDS)
-            .writeTimeout(0, TimeUnit.SECONDS)
-            .readTimeout(0, TimeUnit.SECONDS)
-            .build();
+        List<DetectedObject> detectedObjects = new ArrayList<>();
+
+        for (ServerDetectedObject obj : serverObjects) {
+            // Map the bbox array to Rect object
+            Rect bbox = new Rect(obj.bbox[0], obj.bbox[1], obj.bbox[2], obj.bbox[3]);
+
+            // Tracking id from server `id` or you can leave null
+            Integer trackingId = obj.id;
+
+            // Labels are empty for now, you can adjust if the server starts sending them
+            List<DetectedObject.Label> labels = new ArrayList<>();
+            labels.add(new DetectedObject.Label(Float.toString(obj.speed), 1, 0));
+
+            // Construct the DetectedObject
+            DetectedObject detectedObject = new DetectedObject(bbox, trackingId, labels);
+            detectedObjects.add(detectedObject);
+        }
+
+        return detectedObjects;
+    }
 
     // Function to send a POST request to initialize the server model
     private void initializeServerModel() {
@@ -117,38 +143,6 @@ public class ServerSpeedDetector {
         return request;
     }
 
-    // Parse JSON response manually and convert it to a List of DetectedObjects
-    public static List<DetectedObject> parseDetectedObjects(String jsonResponse) {
-        Gson gson = new Gson();
-        Type listType = new TypeToken<List<ServerDetectedObject>>() {}.getType();
-        List<ServerDetectedObject> serverObjects = gson.fromJson(jsonResponse, listType);
-
-        List<DetectedObject> detectedObjects = new ArrayList<>();
-
-        for (ServerDetectedObject obj : serverObjects) {
-            // Map the bbox array to Rect object
-            Rect bbox = new Rect(obj.bbox[0], obj.bbox[1], obj.bbox[2], obj.bbox[3]);
-
-            // Tracking id from server `id` or you can leave null
-            Integer trackingId = obj.id;
-
-            // Labels are empty for now, you can adjust if the server starts sending them
-            List<DetectedObject.Label> labels = new ArrayList<>();
-            labels.add(new DetectedObject.Label(Float.toString(obj.speed), 1, 0));
-
-            // Construct the DetectedObject
-            DetectedObject detectedObject = new DetectedObject(bbox, trackingId, labels);
-            detectedObjects.add(detectedObject);
-        }
-
-        return detectedObjects;
-    }
-
-    public class ServerDetectedObject {
-        public int id;
-        public int[] bbox;  // bbox[0]: left, bbox[1]: top, bbox[2]: right, bbox[3]: bottom
-        public float speed;
-    }
     private byte[] matToByteArray(Mat frame) {
         MatOfByte matOfByte = new MatOfByte();
         Imgcodecs.imencode(".jpg", frame, matOfByte);
@@ -180,5 +174,11 @@ public class ServerSpeedDetector {
             assert response.body() != null;
             return response.body().bytes();
         }
+    }
+
+    public class ServerDetectedObject {
+        public int id;
+        public int[] bbox;  // bbox[0]: left, bbox[1]: top, bbox[2]: right, bbox[3]: bottom
+        public float speed;
     }
 }

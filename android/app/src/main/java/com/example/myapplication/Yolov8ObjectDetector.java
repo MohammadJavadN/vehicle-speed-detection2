@@ -36,41 +36,43 @@ public class Yolov8ObjectDetector {
 
     private final Size INPNUT_SIZE = new Size(640, 640);
     private final int[] OUTPUT_SIZE = new int[]{1, 8400, 84};
-    private Boolean IS_INT8 = false;
     private final float DETECT_THRESHOLD = 0.25f;
     private final float IOU_THRESHOLD = 0.45f;
     private final float IOU_CLASS_DUPLICATED_THRESHOLD = 0.7f;
-
     private final String LABEL_FILE = "coco_label.txt";
-
-    private int BITMAP_HEIGHT;
-    private int BITMAP_WIDTH;
     MetadataExtractor.QuantizationParams input5SINT8QuantParams = new MetadataExtractor.QuantizationParams(0.003921568859368563f, 0);
     MetadataExtractor.QuantizationParams output5SINT8QuantParams = new MetadataExtractor.QuantizationParams(0.006305381190031767f, 5);
+    Interpreter.Options options = new Interpreter.Options();
+    Yolov8nFloat32 objectDetector;
+    private final Boolean IS_INT8 = false;
+    private int BITMAP_HEIGHT;
+    private int BITMAP_WIDTH;
     private String MODEL_FILE;
-
     private Interpreter tflite;
     private List<String> associatedAxisLabels;
-    Interpreter.Options options = new Interpreter.Options();
 
     public String getModelFile() {
         return this.MODEL_FILE;
     }
 
-    public void setModelFile(String modelFile){
+    public void setModelFile(String modelFile) {
         MODEL_FILE = modelFile;
 
-        Log.d(">>> ", "MODEL NAME SET --- "+ MODEL_FILE + ", "+modelFile);
+        Log.d(">>> ", "MODEL NAME SET --- " + MODEL_FILE + ", " + modelFile);
     }
 
     public String getLabelFile() {
         return this.LABEL_FILE;
     }
 
-    public Size getInputSize(){return this.INPNUT_SIZE;}
-    public int[] getOutputSize(){return this.OUTPUT_SIZE;}
+    public Size getInputSize() {
+        return this.INPNUT_SIZE;
+    }
 
-    Yolov8nFloat32 objectDetector;
+    public int[] getOutputSize() {
+        return this.OUTPUT_SIZE;
+    }
+
     public void initialModel(Context activity) {
 //        try {
 //            objectDetector = Yolov8nFloat32.newInstance(activity);
@@ -81,7 +83,7 @@ public class Yolov8ObjectDetector {
         // Initialise the model
         try {
 
-            Log.d(">>> ", "loading model --- "+ MODEL_FILE);
+            Log.d(">>> ", "loading model --- " + MODEL_FILE);
             ByteBuffer tfliteModel = FileUtil.loadMappedFile(activity, MODEL_FILE);
             tflite = new Interpreter(tfliteModel, options);
             Log.i("tfliteSupport", "Success reading model: " + MODEL_FILE);
@@ -103,7 +105,7 @@ public class Yolov8ObjectDetector {
         // yolov5s-tflite的输入是:[1, 320, 320,3], 摄像头每一帧图片需要resize,再归一化
         TensorImage yolov8nTfliteInput;
         ImageProcessor imageProcessor;
-        if(IS_INT8){
+        if (IS_INT8) {
             imageProcessor =
                     new ImageProcessor.Builder()
                             .add(new ResizeOp(INPNUT_SIZE.getHeight(), INPNUT_SIZE.getWidth(), ResizeOp.ResizeMethod.BILINEAR))
@@ -112,7 +114,7 @@ public class Yolov8ObjectDetector {
                             .add(new CastOp(DataType.UINT8))
                             .build();
             yolov8nTfliteInput = new TensorImage(DataType.UINT8);
-        }else{
+        } else {
             imageProcessor =
                     new ImageProcessor.Builder()
                             .add(new ResizeOp(INPNUT_SIZE.getHeight(), INPNUT_SIZE.getWidth(), ResizeOp.ResizeMethod.BILINEAR))
@@ -127,9 +129,9 @@ public class Yolov8ObjectDetector {
 
         // yolov5s-tflite的输出是:[1, 6300, 85], 可以从v5的GitHub release处找到相关tflite模型, 输出是[0,1], 处理到320.
         TensorBuffer probabilityBuffer;
-        if(IS_INT8){
+        if (IS_INT8) {
             probabilityBuffer = TensorBuffer.createFixedSize(OUTPUT_SIZE, DataType.UINT8);
-        }else{
+        } else {
             probabilityBuffer = TensorBuffer.createFixedSize(OUTPUT_SIZE, DataType.FLOAT32);
         }
 
@@ -141,7 +143,7 @@ public class Yolov8ObjectDetector {
         }
 
         // 这里输出反量化,需要是模型tflite.run之后执行.
-        if(IS_INT8){
+        if (IS_INT8) {
             TensorProcessor tensorProcessor = new TensorProcessor.Builder()
                     .add(new DequantizeOp(output5SINT8QuantParams.getZeroPoint(), output5SINT8QuantParams.getScale()))
                     .build();
@@ -195,7 +197,7 @@ public class Yolov8ObjectDetector {
         ArrayList<Recognition> nmsFilterBoxDuplicationRecognitions = nmsAllClass(nmsRecognitions);
 
         // 更新label信息
-        for(Recognition recognition : nmsFilterBoxDuplicationRecognitions){
+        for (Recognition recognition : nmsFilterBoxDuplicationRecognitions) {
             int labelId = recognition.getLabelId();
             String labelName = associatedAxisLabels.get(labelId);
             recognition.setLabelName(labelName);
@@ -208,7 +210,7 @@ public class Yolov8ObjectDetector {
         ArrayList<Recognition> nmsRecognitions = new ArrayList<Recognition>();
 
         // 遍历每个类别, 在每个类别下做nms
-        for (int i = 0; i < OUTPUT_SIZE[2]-5; i++) {
+        for (int i = 0; i < OUTPUT_SIZE[2] - 5; i++) {
             // 这里为每个类别做一个队列, 把labelScore高的排前面
             PriorityQueue<Recognition> pq =
                     new PriorityQueue<Recognition>(
@@ -299,7 +301,7 @@ public class Yolov8ObjectDetector {
         float maxTop = Math.max(a.top, b.top);
         float minRight = Math.min(a.right, b.right);
         float minBottom = Math.min(a.bottom, b.bottom);
-        float w = minRight -  maxLeft;
+        float w = minRight - maxLeft;
         float h = minBottom - maxTop;
 
         if (w < 0 || h < 0) return 0;
