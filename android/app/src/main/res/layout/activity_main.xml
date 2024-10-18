@@ -17,6 +17,93 @@
         android:layout_margin="20dp"
         />
 
+
+    <LinearLayout
+        android:id="@+id/parameters"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/title"
+        android:layout_centerHorizontal="true">
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="alpha:"/>
+    <EditText
+        android:id="@+id/alpha"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="30"
+        android:inputType="number" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=", beta:"/>
+        <EditText
+            android:id="@+id/beta"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="45"
+            android:inputType="number" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=", focal length:"/>
+        <EditText
+            android:id="@+id/f"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="50.0"
+            android:inputType="numberDecimal" />
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:id="@+id/parameters2"
+        android:orientation="horizontal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/parameters"
+        android:layout_centerHorizontal="true">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="XR:"/>
+        <EditText
+            android:id="@+id/XR"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="10.0"
+            android:inputType="numberDecimal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=", YR:"/>
+        <EditText
+            android:id="@+id/YR"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="20.0"
+            android:inputType="numberDecimal" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text=", HR:"/>
+        <EditText
+            android:id="@+id/HR"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="30.0"
+            android:inputType="numberDecimal" />
+    </LinearLayout>
+
+
     <LinearLayout
         android:id="@+id/IP_layout"
         android:orientation="horizontal"
@@ -24,7 +111,6 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/title"
         android:layout_centerHorizontal="true"
-        android:padding="16dp"
         android:visibility="invisible">
 
         <TextView
@@ -95,9 +181,8 @@
         android:orientation="horizontal"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/IP_layout"
-        android:layout_centerHorizontal="true"
-        android:padding="16dp">
+        android:layout_below="@id/parameters2"
+        android:layout_centerHorizontal="true">
 
         <TextView
             android:layout_width="wrap_content"
@@ -236,7 +321,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/saveBtn"
-        android:layout_marginTop="15dp"
+        android:layout_marginTop="10dp"
         android:orientation="vertical"
         android:layout_centerHorizontal="true">
         <RadioButton
@@ -269,7 +354,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@+id/radioGroupServer"
-        android:layout_marginTop="15dp"
+        android:layout_marginTop="10dp"
         android:orientation="vertical"
         android:layout_centerHorizontal="true">
 
@@ -293,6 +378,11 @@
             android:layout_height="wrap_content"
             android:text="@string/top_view" />
 
+        <RadioButton
+            android:id="@+id/radioIPSA"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/cp" />
     </RadioGroup>
 
 </RelativeLayout>

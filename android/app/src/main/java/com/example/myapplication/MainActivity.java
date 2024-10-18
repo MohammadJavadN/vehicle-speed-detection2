@@ -13,9 +13,7 @@ import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.Matrix;
 import android.graphics.Paint;
-import android.graphics.Rect;
 import android.graphics.RectF;
 import android.net.Uri;
 import android.os.Build;
@@ -27,13 +25,9 @@ import android.view.SurfaceView;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.RadioButton;
-import android.widget.RadioGroup;
-import android.widget.Switch;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
-import androidx.activity.result.ActivityResultLauncher;
-import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.AppCompatActivity;
@@ -44,7 +38,6 @@ import com.example.myapplication.ml.LicensePlateDetectorFloat32;
 import com.example.myapplication.ml.SpeedPredictionModel;
 import com.example.myapplication.ml.SpeedPredictionModelSideView;
 import com.example.myapplication.ml.SpeedPredictionTopViewNoPlateModel;
-import com.example.myapplication.ml.Yolov8nFloat32;
 import com.google.mlkit.vision.GraphicOverlay;
 import com.google.mlkit.vision.common.InputImage;
 import com.google.mlkit.vision.objects.DetectedObject;
@@ -67,11 +60,9 @@ import org.opencv.core.TermCriteria;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.video.Video;
 import org.opencv.videoio.VideoCapture;
-import org.opencv.videoio.VideoWriter;
 import org.opencv.videoio.Videoio;
 import org.tensorflow.lite.DataType;
 import org.tensorflow.lite.Interpreter;
-import org.tensorflow.lite.support.common.FileUtil;
 import org.tensorflow.lite.support.image.TensorImage;
 import org.tensorflow.lite.support.tensorbuffer.TensorBuffer;
 
@@ -79,7 +70,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
-import java.nio.MappedByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -138,6 +128,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private TOFSpeedDetector tofSpeedDetector;
     private OptSpeedDetector topSpeedDetector;
     private OptSpeedDetector sideSpeedDetector;
+    private CPSpeedDetector CPSpeedDetector;
     private ServerSpeedDetector serverSpeedDetector;
     private GraphicOverlay graphicOverlay;
     String serverUrl = "http://192.168.43.226:5000/";
@@ -248,7 +239,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     }
     Interpreter interpreter;
     private static String outCSVPath = "/sdcard/Download/out.csv";
-    private boolean isServer, isTOF, isSide, serverWithSpeed;
+    private boolean isServer, isTOF, isSide, isCD, serverWithSpeed;
 
     private static final int PERMISSION_REQUEST_CODE = 100;
 
@@ -466,7 +457,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             Mat frame2 = new Mat();
                             Utils.bitmapToMat(image2.getBitmapInternal(), frame2);
                             Canvas canvas = surfaceView.getHolder().lockCanvas();
-                            if (isTOF)
+                            if (isCD)
+                                CPSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                            else if (isTOF)
                                 tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
                             else if (isSide)
                                 sideSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
@@ -501,7 +494,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         Mat frame2 = new Mat();
                         Utils.bitmapToMat(image2.getBitmapInternal(), frame2);
                         Canvas canvas = surfaceView.getHolder().lockCanvas();
-                        if (isTOF)
+                        if (isCD)
+                            CPSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                        else if (isTOF)
                             tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
                         else if (isSide)
                             sideSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
@@ -632,15 +627,28 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
                 isTOF = ((RadioButton) findViewById(R.id.radioASE)).isChecked();
                 isSide = ((RadioButton) findViewById(R.id.radioSide)).isChecked();
-                
+                isCD = ((RadioButton) findViewById(R.id.radioIPSA)).isChecked();
+
+                if (isCD) {
+                    int alpha = Integer.parseInt(((EditText) findViewById(R.id.alpha)).getText().toString());
+                    int beta = Integer.parseInt(((EditText) findViewById(R.id.beta)).getText().toString());
+//                    float lambda = Float.parseFloat(((EditText) findViewById(R.id.lambda)).getText().toString());
+
+                    float f = Float.parseFloat(((EditText) findViewById(R.id.f)).getText().toString());
+                    float XR = Float.parseFloat(((EditText) findViewById(R.id.XR)).getText().toString());
+                    float YR = Float.parseFloat(((EditText) findViewById(R.id.YR)).getText().toString());
+                    float HR = Float.parseFloat(((EditText) findViewById(R.id.HR)).getText().toString());
+                    CPSpeedDetector.init(alpha, beta, f, XR, YR, HR);
+                }
+
                 if (isTOF) {
                     inVideoPath = "/sdcard/Download/FILE0010.mp4"; // tof (ASE)
                     FRAME_STEP = 4;
-                } else if (isSide) {
+                } else if (isSide | isCD) {
                     inVideoPath = "/sdcard/Download/side_vid.mp4"; // side
                     inVideoPath = "/sdcard/Download/side_bus.mp4"; // side
                     inVideoPath = "/sdcard/Download/side_van.mp4"; // side
-                    inVideoPath = "/sdcard/Download/side_L90.mp4"; // side
+//                    inVideoPath = "/sdcard/Download/side_L90.mp4"; // side
                     FRAME_STEP = 1;
                 } else {
                     FRAME_STEP = 1;
@@ -742,6 +750,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
             topSpeedDetector = new OptSpeedDetector(topSpeedInputFeature2, speedPredictionTopViewNoPlateModel);
             sideSpeedDetector = new OptSpeedDetector(sideSpeedInputFeature, speedPredictionModelSideView);
+
+            CPSpeedDetector = new CPSpeedDetector();
 
         } catch (IOException e) {
             throw new RuntimeException(e);

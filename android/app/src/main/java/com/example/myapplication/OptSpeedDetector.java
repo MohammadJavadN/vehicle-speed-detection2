@@ -193,9 +193,9 @@ public class OptSpeedDetector extends SpeedDetector {
 
     }
 
-    private Map<Integer, Rect> twoPointsSpeed = new HashMap<>();
+    private static final Map<Integer, Rect> twoPointsSpeed = new HashMap<>();
 
-    private int getTwoPointsSpeed(int id, Rect rect2) {
+    public static int getTwoPointsSpeed(int id, Rect rect2) {
         int speed = -1;
         int x1, y1, w1, h1;
         int x2, y2, w2, h2;
@@ -216,7 +216,7 @@ public class OptSpeedDetector extends SpeedDetector {
         return speed;
     }
 
-    private int getTwoPointsSpeed2(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
+    private static int getTwoPointsSpeed2(int x1, int y1, int w1, int h1, int x2, int y2, int w2, int h2) {
         double dPixel = Math.sqrt(Math.pow(x2-x1, 2) + Math.pow(y2-y1, 2));
         double w = (double) (w1 + w2) / 2;
         double h = (double) (h1 + h2) / 2;
@@ -228,7 +228,7 @@ public class OptSpeedDetector extends SpeedDetector {
         double speed = dMeters * timeConstant * 4;
         return (int) speed;
     }
-    private int getGridSpeed(Rect rect) {
+    public static int getGridSpeed(Rect rect) {
         System.out.println("@@@@@@ rect= " + rect);
 
         int sumSpeed = 0;
@@ -259,8 +259,8 @@ public class OptSpeedDetector extends SpeedDetector {
         return 4;
     }
     float[] laneSpeeds = {0, 0, 0, 0};
-    List<List<Integer>> gridSpeeds;
-    private void gridSpeedsInit() {
+    static List<List<Integer>> gridSpeeds;
+    public static void gridSpeedsInit() {
         gridSpeeds = new ArrayList<>();
     }
     Mat mask;
