@@ -1094,15 +1094,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 isCP = ((RadioButton) findViewById(R.id.radioIPSA)).isChecked();
 
                 if (isCP) {
-                    int alpha = Integer.parseInt(((EditText) findViewById(R.id.alpha)).getText().toString());
-                    int beta = Integer.parseInt(((EditText) findViewById(R.id.beta)).getText().toString());
-//                    float lambda = Float.parseFloat(((EditText) findViewById(R.id.lambda)).getText().toString());
 
                     float f = Float.parseFloat(((EditText) findViewById(R.id.f)).getText().toString());
                     float XR = Float.parseFloat(((EditText) findViewById(R.id.XR)).getText().toString());
                     float YR = Float.parseFloat(((EditText) findViewById(R.id.YR)).getText().toString());
                     float HR = Float.parseFloat(((EditText) findViewById(R.id.HR)).getText().toString());
-                    CPSpeedDetector.init(alpha, beta, f, XR, YR, HR);
+                    CPSpeedDetector.init(f, XR, YR, HR);
                 }
 
                 if (isTOF) {

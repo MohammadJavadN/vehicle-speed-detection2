@@ -27,31 +27,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="alpha:" />
-
-        <EditText
-            android:id="@+id/alpha"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:text="30" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=", beta:" />
-
-        <EditText
-            android:id="@+id/beta"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:inputType="number"
-            android:text="45" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text=", focal length:" />
+            android:text="focal length:" />
 
         <EditText
             android:id="@+id/f"
@@ -60,20 +36,10 @@
             android:inputType="numberDecimal"
             android:text="50.0" />
 
-    </LinearLayout>
-
-    <LinearLayout
-        android:id="@+id/parameters2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_below="@id/parameters"
-        android:layout_centerHorizontal="true"
-        android:orientation="horizontal">
-
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="XR:" />
+            android:text=", X0:" />
 
         <EditText
             android:id="@+id/XR"
@@ -85,7 +51,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=", YR:" />
+            android:text=", Y0:" />
 
         <EditText
             android:id="@+id/YR"
@@ -97,7 +63,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=", HR:" />
+            android:text=", H:" />
 
         <EditText
             android:id="@+id/HR"
@@ -191,7 +157,7 @@
         android:id="@+id/url_layout"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@id/parameters2"
+        android:layout_below="@id/parameters"
         android:layout_centerHorizontal="true"
         android:orientation="horizontal">
 

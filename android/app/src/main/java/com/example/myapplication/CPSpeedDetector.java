@@ -5,6 +5,7 @@ import static com.example.myapplication.OptSpeedDetector.getTwoPointsSpeed;
 import static com.example.myapplication.OptSpeedDetector.gridSpeeds;
 import static com.example.myapplication.OptSpeedDetector.gridSpeedsInit;
 import static java.lang.Math.min;
+import static java.lang.Math.sqrt;
 
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
@@ -33,9 +34,9 @@ import java.util.List;
 
 public class CPSpeedDetector extends SpeedDetector {
     final static int fq = 2;
-    double alpha = Math.toRadians(30);   // Example: 30 degrees converted to radians
-    double betha = Math.toRadians(45);   // Example: 45 degrees converted to radians
-    double landa = 1.0 / 0.0264583333;                   // Example value
+    double alpha;   // Example: 30 degrees converted to radians
+    double beta;   // Example: 45 degrees converted to radians
+    double lambda = 1.0 / 0.0264583333;                   // Example value
     double f = 50.0;                       // Example focal length or another parameter
     double X_R = 10.0;                     // Example rotation or position parameter
     double Y_R = 20.0;                     // Example rotation or position parameter
@@ -54,10 +55,12 @@ public class CPSpeedDetector extends SpeedDetector {
         super(fq);
     }
 
-    public void init(double alpha, double beta, double f, double x_R, double y_R, double h_R) {
-        this.alpha = Math.toRadians(alpha);
-        this.betha = Math.toRadians(beta);
-//        this.landa = lambda;
+    public void init(double f, double x_R, double y_R, double h_R) {
+        alpha= Math.atan(y_R/h_R);
+        beta = Math.atan(x_R/sqrt(y_R*y_R+h_R*h_R));
+        alpha = Math.toRadians(alpha);
+        beta = Math.toRadians(beta);
+//        this.lambda = lambda;
         this.f = f;
         X_R = x_R;
         Y_R = y_R;
@@ -72,9 +75,9 @@ public class CPSpeedDetector extends SpeedDetector {
 
         // Step 2: Define Ry matrix
         double[][] RyData = {
-                {Math.cos(this.betha), 0, Math.sin(this.betha)},
+                {Math.cos(beta), 0, Math.sin(beta)},
                 {0, 1, 0},
-                {-Math.sin(this.betha), 0, Math.cos(this.betha)}
+                {-Math.sin(beta), 0, Math.cos(beta)}
         };
         RealMatrix Ry = MatrixUtils.createRealMatrix(RyData);
 
@@ -235,8 +238,8 @@ public class CPSpeedDetector extends SpeedDetector {
 
     private int predict(double xp1, double yp1, double xp2, double yp2) {
         // Step 11: Initial computations using the first data point
-        double x_p = (1.0 / (100.0 * landa)) * (xp1 - (imW / 2.0));
-        double y_p = (1.0 / (100.0 * landa)) * ((imH / 2.0) - yp1);
+        double x_p = (1.0 / (100.0 * lambda)) * (xp1 - (imW / 2.0));
+        double y_p = (1.0 / (100.0 * lambda)) * ((imH / 2.0) - yp1);
 
         double denominator = (a * x_p + b * y_p + c * f);
         if (denominator == 0) {
@@ -260,8 +263,8 @@ public class CPSpeedDetector extends SpeedDetector {
         // double H_real = Pos.getEntry(2, 0); // Uncomment if needed
 
         // Compute x_p and y_p for the next data point
-        x_p = (1.0 / (100.0 * landa)) * (xp2 - (imW / 2.0));
-        y_p = (1.0 / (100.0 * landa)) * ((imW / 2.0) - yp2);
+        x_p = (1.0 / (100.0 * lambda)) * (xp2 - (imW / 2.0));
+        y_p = (1.0 / (100.0 * lambda)) * ((imW / 2.0) - yp2);
 
         denominator = (a * x_p + b * y_p + c * f);
         if (denominator == 0) {
