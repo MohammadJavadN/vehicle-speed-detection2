@@ -236,7 +236,7 @@ public class CPSpeedDetector extends SpeedDetector {
         }
     }
 
-    private int predict(double xp1, double yp1, double xp2, double yp2) {
+    public int predict(double xp1, double yp1, double xp2, double yp2) {
         // Step 11: Initial computations using the first data point
         double x_p = (1.0 / (100.0 * lambda)) * (xp1 - (imW / 2.0));
         double y_p = (1.0 / (100.0 * lambda)) * ((imH / 2.0) - yp1);

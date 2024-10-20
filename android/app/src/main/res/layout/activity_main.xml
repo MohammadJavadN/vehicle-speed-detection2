@@ -34,7 +34,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:inputType="numberDecimal"
-            android:text="50.0" />
+            android:text="77.0" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -46,7 +46,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:inputType="numberDecimal"
-            android:text="10.0" />
+            android:text="14.0" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -58,7 +58,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:inputType="numberDecimal"
-            android:text="20.0" />
+            android:text="9.0" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -70,7 +70,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:inputType="numberDecimal"
-            android:text="30.0" />
+            android:text="1.50" />
     </LinearLayout>
 
 
@@ -180,12 +180,34 @@
         android:id="@+id/surfaceView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/radioGroup"
+        android:layout_below="@+id/pause"
         android:layout_centerHorizontal="true"
         android:layout_margin="5dp"
-        android:onClick="browseVideo" />
+        android:visibility="invisible"
+        />
 
-
+    <Button
+        android:id="@+id/pause"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/saveBtn"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:onClick="pause"
+        android:text="@string/pause"
+        android:visibility="invisible"
+        />
+    <Button
+        android:id="@+id/resume"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/saveBtn"
+        android:layout_centerHorizontal="true"
+        android:layout_marginTop="10dp"
+        android:onClick="resume"
+        android:text="@string/resume"
+        android:visibility="invisible"
+        />
     <com.google.mlkit.vision.GraphicOverlay
         android:id="@+id/overlayView"
         android:layout_width="wrap_content"

@@ -14,4 +14,6 @@
     <string name="server_url">http://192.168.43.226:5000/</string>
     <string name="server_speed">server speed</string>
     <string name="cp">CP</string>
+    <string name="pause">pause</string>
+    <string name="resume">resume</string>
 </resources>

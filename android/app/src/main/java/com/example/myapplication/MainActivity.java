@@ -133,7 +133,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     //    InputImage image;
     Bitmap bitmap;
     Mat frame;
-    int stopTime = 1;
+    int stopTime = 100;
     MainActivity context;
     Mat frame2;
     InputImage image2;
@@ -615,6 +615,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -626,6 +627,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         graphicOverlay = findViewById(R.id.overlayView);
 
         surfaceView = findViewById(R.id.surfaceView);
+        surfaceView.setOnTouchListener(this);
         initializeCircles();
 
         setupObjectDetector();
@@ -710,10 +712,88 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         circle4.setOnTouchListener(this);
     }
 
+    static Paint pointPaint;
+    static {
+        pointPaint = new Paint();
+        pointPaint.setColor(Color.RED);
+        pointPaint.setStyle(Paint.Style.FILL);
+    }
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouch(View v, MotionEvent event) {
-        if (event.getAction() == MotionEvent.ACTION_MOVE)
+        System.out.println("*** onTouch: " + event.getAction());
+        if (v.getId() == R.id.surfaceView && event.getAction() == MotionEvent.ACTION_UP) {
+            if (!p1Selected) {
+                double sw = surfaceView.getWidth();
+                double sh = surfaceView.getHeight();
+                double sx = imW/sw;
+                double sy = imH/sh;
+
+                x1 = (event.getRawX() - surfaceView.getX())*sx;
+                y1 = (event.getRawY() - surfaceView.getY())*sy;
+                p1Selected = true;
+                Toast.makeText(
+                    getApplicationContext(),
+                            "x1= " + x1 + ", y1= " + y1,
+                            Toast.LENGTH_LONG
+                ).show();
+                frameNum1 = frameNum;
+
+                Canvas canvas = surfaceView.getHolder().lockCanvas();
+
+                if (canvas != null) {
+                    canvas.drawRect(
+                            (float) x1,
+                            (float) y1,
+                            (float) x1+2,
+                            (float) y1+2,
+                            pointPaint);
+                }
+
+//        runOnUiThread(() -> {
+                if (canvas != null) {
+                    surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                }
+
+            } else if (!p2Selected) {
+                double sw = surfaceView.getWidth();
+                double sh = surfaceView.getHeight();
+                double sx = imW/sw;
+                double sy = imH/sh;
+
+                x2 = (event.getRawX() - surfaceView.getX())*sx;
+                y2 = (event.getRawY() - surfaceView.getY())*sy;
+                p2Selected = true;
+                Toast.makeText(
+                        getApplicationContext(),
+                        "x2= " + x2 + ", y2= " + y2,
+                        Toast.LENGTH_LONG
+                ).show();
+                frameNum2 = frameNum;
+
+                Canvas canvas = surfaceView.getHolder().lockCanvas();
+
+                if (canvas != null) {
+                    canvas.drawRect(
+                            (float) x2,
+                            (float) y2,
+                            (float) x2+2,
+                            (float) y2+2,
+                            pointPaint);
+                    int speed = CPSpeedDetector.predict(x1, y1, x2, y2)*(frameNum2-frameNum1);
+                    canvas.drawText(
+                            "Speed: " + speed,
+                            50,
+                            50,
+                            textPaint);
+                }
+
+//        runOnUiThread(() -> {
+                if (canvas != null) {
+                    surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                }
+            }
+        } else if (event.getAction() == MotionEvent.ACTION_MOVE)
             graphicOverlay.roadLine.movePoint(v, event);
 //        if (graphicOverlay.show(true))
 //            findViewById(R.id.floatingActionButton).setVisibility(View.VISIBLE);
@@ -841,39 +921,69 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         context = this;
-        Runnable updateFrameTask = () -> {
-            if (!isBusy) {
+        Runnable updateFrameTask;
+        if (isCP) {
+            updateFrameTask = () -> {
+                if (!isBusy) {
+                    frame2 = new Mat();
+                    boolean ret = false;
+                    if (!pause)
+                        ret = cap.read(frame2);
+                    if (ret) {
+                        if (frameNum == 0) {
+                            Bitmap bitmap = matToBitmap(frame2);
+                            initialParameters(bitmap);
+                        }
+                        frameNum++;
+                        if (frameNum < 2)
+                            return;
+
+                        isBusy = true;
+                        bitmap2 = Bitmap.createBitmap(frame2.cols(), frame2.rows(), Bitmap.Config.ARGB_8888);
+                        processImageCP();
+                        isBusy = false;
+
+                    } else if (!pause) {
+                        onDestroy();
+                        System.out.println("*** destroy!!!");
+                    }
+                }
+            };
+        } else {
+            updateFrameTask = () -> {
+                if (!isBusy) {
 //                if (isOutAvailable && graphicOverlay.isValidBitmap)
 //                    out.encodeFrame(graphicOverlay.getBitmap());
 
-                Mat frame = new Mat();
-                boolean ret = cap.read(frame);
-                if (ret) {
-                    if (frameNum == 0) {
-                        Bitmap bitmap = matToBitmap(frame);
-                        initialParameters(bitmap);
-                    }
-                    frameNum++;
+                    Mat frame = new Mat();
+                    boolean ret = cap.read(frame);
+                    if (ret) {
+                        if (frameNum == 0) {
+                            Bitmap bitmap = matToBitmap(frame);
+                            initialParameters(bitmap);
+                        }
+                        frameNum++;
 //                    if (frameNum < 2469)
-                    if (frameNum < 2)
-                        return;
+                        if (frameNum < 2)
+                            return;
 //                    stopTime = 160;
-
-                    try {
-                        isBusy = true;
+                        try {
+                            isBusy = true;
 //                        trackerProcessor.processBitmap(bitmap, graphicOverlay);
-                        scheduledExecutorService.shutdown();
-                        bitmap2 = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
-                        processImage2();
-                    } catch (Exception e) {
-                        Log.e(TAG, "Failed to process image. Error: " + e.getLocalizedMessage());
-                        Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT)
-                                .show();
-                    }
-                } else
-                    onDestroy();
-            }
-        };
+                            scheduledExecutorService.shutdown();
+                            bitmap2 = Bitmap.createBitmap(frame.cols(), frame.rows(), Bitmap.Config.ARGB_8888);
+                            processImage2();
+                        } catch (Exception e) {
+                            Log.e(TAG, "Failed to process image. Error: " + e.getLocalizedMessage());
+                            Toast.makeText(getApplicationContext(), e.getLocalizedMessage(), Toast.LENGTH_SHORT)
+                                    .show();
+                        }
+                    } else
+                        onDestroy();
+                }
+            };
+
+        }
 
         // Schedule the task to run every 33 milliseconds (30 frames per second)
         scheduledExecutorService.scheduleAtFixedRate(
@@ -881,6 +991,56 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 0, // Initial delay
                 stopTime, // Period (milliseconds)
                 TimeUnit.MILLISECONDS);
+    }
+
+    public void pause(View v) {
+        findViewById(R.id.pause).setVisibility(View.INVISIBLE);
+        findViewById(R.id.resume).setVisibility(View.VISIBLE);
+        pause = true;
+    }
+    public void resume(View v) {
+        findViewById(R.id.resume).setVisibility(View.INVISIBLE);
+        findViewById(R.id.pause).setVisibility(View.VISIBLE);
+        pause = false;
+    }
+    int frameNum1, frameNum2;
+    double x1, y1, x2, y2;
+    boolean p1Selected = false;
+    boolean p2Selected = false;
+    boolean pause = false;
+    static Paint textPaint;
+    static {
+        textPaint = new Paint();
+        textPaint.setColor(Color.RED);
+        textPaint.setTextSize(40.0f);
+    }
+    public void processImageCP() {
+        System.out.println("*** processImageCP");
+
+        Utils.matToBitmap(frame2, bitmap2);
+        Canvas canvas = surfaceView.getHolder().lockCanvas();
+        if (canvas != null) {
+            // Render the frame onto the canvas
+            int w = canvas.getWidth();
+            int h = canvas.getHeight();
+            Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap2, w, h, false);
+            canvas.drawBitmap(scaledBitmap, 0, 0, null);
+        }
+        if (p2Selected) {
+            if (canvas != null) {
+                int speed = CPSpeedDetector.predict(x1, y1, x2, y2)*(frameNum2-frameNum1);
+                canvas.drawText(
+                        "Speed: " + speed,
+                        50,
+                        50,
+                        textPaint);
+            }
+        }
+//        runOnUiThread(() -> {
+            if (canvas != null) {
+                surfaceView.getHolder().unlockCanvasAndPost(canvas);
+            }
+//        });
     }
 
     public void processImage2() {
@@ -986,6 +1146,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 //        trackerProcessor.DISTANCE_TH = (double) bitmap.getWidth() / 10;
         MyDetectedObject.imgWidth = bitmap.getWidth();
         MyDetectedObject.imgHeight = bitmap.getHeight();
+        imW = bitmap.getWidth();
+        imH = bitmap.getHeight();
     }
 
     public void saveCsv(View view) {
@@ -1100,6 +1262,12 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     float YR = Float.parseFloat(((EditText) findViewById(R.id.YR)).getText().toString());
                     float HR = Float.parseFloat(((EditText) findViewById(R.id.HR)).getText().toString());
                     CPSpeedDetector.init(f, XR, YR, HR);
+                    findViewById(R.id.pause).setVisibility(View.VISIBLE);
+                    findViewById(R.id.resume).setVisibility(View.INVISIBLE);
+                    pause = false;
+                } else {
+                    findViewById(R.id.pause).setVisibility(View.GONE);
+                    findViewById(R.id.resume).setVisibility(View.GONE);
                 }
 
                 if (isTOF) {
@@ -1121,6 +1289,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 findViewById(R.id.radioGroup).setVisibility(View.GONE);
                 findViewById(R.id.IP_layout).setVisibility(View.GONE);
                 findViewById(R.id.url_layout).setVisibility(View.GONE);
+                findViewById(R.id.surfaceView).setVisibility(View.VISIBLE);
 
 
                 Uri selectedVideoUri = data.getData();
