@@ -2,6 +2,8 @@ package com.example.myapplication;
 
 import static com.google.mlkit.vision.BitmapUtils.matToBitmap;
 import static java.lang.Math.abs;
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
 
 import android.Manifest;
 import android.annotation.SuppressLint;
@@ -93,9 +95,18 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     static final int STATE = 3;
     private static final Scalar speedColor = new Scalar(255, 0, 0);
     private static final int PERMISSION_REQUEST_CODE = 100;
+    private static final String outCSVFileName = "out.csv";
+    private static final String outVideoFileName = "out.mp4";
+    private static final Size WIN_SIZE = new Size(15, 15);
+    private static final TermCriteria CRITERIA = new TermCriteria(TermCriteria.COUNT + TermCriteria.EPS,
+            10,
+            0.03);
+    private static final int MAX_LEVEL = 2;
     public static int DETECTION_MODE = ObjectDetectorOptions.SINGLE_IMAGE_MODE;
     public static boolean isBusy = false;
     static int state = 1;
+    static Paint pointPaint, linePaint;
+    static Paint textPaint;
     private static String inVideoPath = "/sdcard/Download/FILE0030.mp4"; // tof (ASE)
     //    private static String inVideoPath = "/sdcard/Download/side_vid.mp4"; // side
 //    private static String inVideoPath = "/sdcard/Download/Video(1).mp4"; // top
@@ -122,8 +133,23 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private static int imW;
     private static int imH;
     private static String outCSVPath = "/sdcard/Download/out.csv";
-    private static final String outCSVFileName = "out.csv";
-    private static final String outVideoFileName = "out.mp4";
+
+    static {
+        pointPaint = new Paint();
+        pointPaint.setColor(Color.RED);
+        pointPaint.setStyle(Paint.Style.FILL);
+
+        linePaint = new Paint();
+        linePaint.setColor(Color.RED);
+        linePaint.setStrokeWidth(5);
+    }
+
+    static {
+        textPaint = new Paint();
+        textPaint.setColor(Color.RED);
+        textPaint.setTextSize(40.0f);
+    }
+
     SurfaceView surfaceView;
     String serverUrl = "http://192.168.43.226:5000/";
     Yolov8ObjectDetector yolov8ObjectDetector;
@@ -140,6 +166,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     Bitmap bitmap2;
     int FRAME_STEP = 1;
     int REQUEST_VIDEO_CODE = 1;
+    MatOfPoint2f prevPtsMat;
+    double sx = 1, sy = 1;
+    int frameNum1, frameNum2;
+    double x1, y1, x2, y2;
+    double x1c, y1c, x2c, y2c;
+    boolean p1Selected = false;
+    boolean p2Selected = false;
+    boolean pause = false;
     private ScheduledExecutorService scheduledExecutorService;
     private ObjectTrackerProcessor trackerProcessor;
     private ObjectDetector objectDetector;
@@ -712,57 +746,82 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         circle4.setOnTouchListener(this);
     }
 
-    static Paint pointPaint;
-    static {
-        pointPaint = new Paint();
-        pointPaint.setColor(Color.RED);
-        pointPaint.setStyle(Paint.Style.FILL);
-    }
     @SuppressLint("ClickableViewAccessibility")
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         System.out.println("*** onTouch: " + event.getAction());
         if (v.getId() == R.id.surfaceView && event.getAction() == MotionEvent.ACTION_UP) {
+            Utils.matToBitmap(frame2, bitmap2);
+            Canvas canvas = surfaceView.getHolder().lockCanvas();
+            if (canvas != null) {
+                // Render the frame onto the canvas
+                int w = canvas.getWidth();
+                int h = canvas.getHeight();
+                Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap2, w, h, false);
+                canvas.drawBitmap(scaledBitmap, 0, 0, null);
+            }
             if (!p1Selected) {
                 double sw = surfaceView.getWidth();
                 double sh = surfaceView.getHeight();
-                double sx = imW/sw;
-                double sy = imH/sh;
+                sx = imW / sw;
+                sy = imH / sh;
 
-                x1 = (event.getRawX() - surfaceView.getX())*sx;
-                y1 = (event.getRawY() - surfaceView.getY())*sy;
+                x1c = event.getRawX() - surfaceView.getX();
+                y1c = event.getRawY() - surfaceView.getY();
+                x1 = (x1c) * sx;
+                y1 = (y1c) * sy;
+
+                Point userSelectedP = new Point(x1, y1);
+                Point selectedP = new Point(x1, y1);
+                prevGray = new Mat();
+                Imgproc.cvtColor(frame2, prevGray, Imgproc.COLOR_BGR2GRAY);
+//                MatOfPoint p0MatofPoint = new MatOfPoint();
+//                Imgproc.goodFeaturesToTrack(prevGray, p0MatofPoint,1000,0.3,7, new Mat(),7,false,0.04);
+//
+//                Point[] points = p0MatofPoint.toArray();
+//                double minD = 300;
+//                for (Point p:points) {
+//                    double d = d2(p, userSelectedP);
+//                    if (d < minD) {
+//                        minD = d;
+//                        selectedP = p.clone();
+//                    }
+//                }
+//                x1c = selectedP.x/sx;
+//                y1c = selectedP.y/sy;
+//                x1 = (x1c) * sx;
+//                y1 = (y1c) * sy;
+
+                prevPts = new ArrayList<>();
+                prevPts.add(selectedP);
+                prevPtsMat = new MatOfPoint2f();
+                prevPtsMat.fromList(prevPts);
+
                 p1Selected = true;
                 Toast.makeText(
-                    getApplicationContext(),
-                            "x1= " + x1 + ", y1= " + y1,
-                            Toast.LENGTH_LONG
+                        getApplicationContext(),
+                        "x1= " + x1 + ", y1= " + y1,
+                        Toast.LENGTH_LONG
                 ).show();
                 frameNum1 = frameNum;
 
-                Canvas canvas = surfaceView.getHolder().lockCanvas();
-
                 if (canvas != null) {
-                    canvas.drawRect(
-                            (float) x1,
-                            (float) y1,
-                            (float) x1+2,
-                            (float) y1+2,
+                    canvas.drawCircle(
+                            (float) x1c,
+                            (float) y1c,
+                            20,
                             pointPaint);
                 }
-
-//        runOnUiThread(() -> {
-                if (canvas != null) {
-                    surfaceView.getHolder().unlockCanvasAndPost(canvas);
-                }
-
             } else if (!p2Selected) {
-                double sw = surfaceView.getWidth();
-                double sh = surfaceView.getHeight();
-                double sx = imW/sw;
-                double sy = imH/sh;
+                x2c = event.getRawX() - surfaceView.getX();
+                y2c = event.getRawY() - surfaceView.getY();
+                x2 = (x2c) * sx;
+                y2 = (y2c) * sy;
+                prevPts.clear();
+                prevPts.add(new Point(x2, y2));
+                prevPtsMat.fromList(prevPts);
+                Imgproc.cvtColor(frame2, prevGray, Imgproc.COLOR_BGR2GRAY);
 
-                x2 = (event.getRawX() - surfaceView.getX())*sx;
-                y2 = (event.getRawY() - surfaceView.getY())*sy;
                 p2Selected = true;
                 Toast.makeText(
                         getApplicationContext(),
@@ -771,33 +830,37 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 ).show();
                 frameNum2 = frameNum;
 
-                Canvas canvas = surfaceView.getHolder().lockCanvas();
-
                 if (canvas != null) {
-                    canvas.drawRect(
-                            (float) x2,
-                            (float) y2,
-                            (float) x2+2,
-                            (float) y2+2,
+                    canvas.drawLine((float) x1c, (float) y1c, (float) (x2c), (float) (y2c), linePaint);
+                    canvas.drawCircle(
+                            (float) x2c,
+                            (float) y2c,
+                            20,
                             pointPaint);
-                    int speed = CPSpeedDetector.predict(x1, y1, x2, y2)*(frameNum2-frameNum1);
+                    int speed = CPSpeedDetector.predict(x1, y1, x2, y2) / (frameNum2 - frameNum1);
                     canvas.drawText(
                             "Speed: " + speed,
                             50,
-                            50,
+                            150,
                             textPaint);
                 }
-
-//        runOnUiThread(() -> {
-                if (canvas != null) {
-                    surfaceView.getHolder().unlockCanvasAndPost(canvas);
-                }
+            } else {
+                p1Selected = false;
+                p2Selected = false;
             }
-        } else if (event.getAction() == MotionEvent.ACTION_MOVE)
+            if (canvas != null) {
+                surfaceView.getHolder().unlockCanvasAndPost(canvas);
+            }
+
+        } else if (event.getAction() == MotionEvent.ACTION_MOVE && v.getId() != R.id.surfaceView)
             graphicOverlay.roadLine.movePoint(v, event);
 //        if (graphicOverlay.show(true))
 //            findViewById(R.id.floatingActionButton).setVisibility(View.VISIBLE);
         return true;
+    }
+
+    private double d2(Point p1, Point p2) {
+        return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
     }
 
     void getPermission() {
@@ -921,11 +984,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         scheduledExecutorService = Executors.newSingleThreadScheduledExecutor();
         context = this;
+        frame2 = new Mat();
         Runnable updateFrameTask;
         if (isCP) {
             updateFrameTask = () -> {
                 if (!isBusy) {
-                    frame2 = new Mat();
                     boolean ret = false;
                     if (!pause)
                         ret = cap.read(frame2);
@@ -998,22 +1061,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         findViewById(R.id.resume).setVisibility(View.VISIBLE);
         pause = true;
     }
+
     public void resume(View v) {
         findViewById(R.id.resume).setVisibility(View.INVISIBLE);
         findViewById(R.id.pause).setVisibility(View.VISIBLE);
         pause = false;
     }
-    int frameNum1, frameNum2;
-    double x1, y1, x2, y2;
-    boolean p1Selected = false;
-    boolean p2Selected = false;
-    boolean pause = false;
-    static Paint textPaint;
-    static {
-        textPaint = new Paint();
-        textPaint.setColor(Color.RED);
-        textPaint.setTextSize(40.0f);
-    }
+
     public void processImageCP() {
         System.out.println("*** processImageCP");
 
@@ -1026,9 +1080,34 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap2, w, h, false);
             canvas.drawBitmap(scaledBitmap, 0, 0, null);
         }
-        if (p2Selected) {
+        if (p1Selected) {
             if (canvas != null) {
-                int speed = CPSpeedDetector.predict(x1, y1, x2, y2)*(frameNum2-frameNum1);
+
+                MatOfByte status = new MatOfByte();
+                MatOfFloat errors = new MatOfFloat();
+
+                // Calculate optical flow
+                Mat frameGray = new Mat();
+                Imgproc.cvtColor(frame2, frameGray, Imgproc.COLOR_BGR2GRAY);
+
+                MatOfPoint2f nextPts = new MatOfPoint2f();
+                Video.calcOpticalFlowPyrLK(
+                        prevGray, frameGray, prevPtsMat, nextPts, status, errors, WIN_SIZE, MAX_LEVEL, CRITERIA);
+
+                List<Point> nextPtsList = nextPts.toList();
+                prevPtsMat = new MatOfPoint2f();
+                prevPtsMat.fromList(nextPtsList);
+                prevGray = frameGray.clone();
+
+                double x = nextPtsList.get(0).x;
+                double y = nextPtsList.get(0).y;
+                canvas.drawCircle(
+                        (float) (x / sx),
+                        (float) (y / sy),
+                        20,
+                        pointPaint);
+                canvas.drawLine((float) x1c, (float) y1c, (float) (x / sx), (float) (y / sy), linePaint);
+                int speed = CPSpeedDetector.predict(x1, y1, x, y) / (frameNum - frameNum1);
                 canvas.drawText(
                         "Speed: " + speed,
                         50,
@@ -1036,10 +1115,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         textPaint);
             }
         }
-//        runOnUiThread(() -> {
+        if (p2Selected) {
             if (canvas != null) {
-                surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                int speed = CPSpeedDetector.predict(x1, y1, x2, y2) / (frameNum2 - frameNum1);
+                canvas.drawText(
+                        "Speed: " + speed,
+                        50,
+                        150,
+                        textPaint);
             }
+        }
+//        runOnUiThread(() -> {
+        if (canvas != null) {
+            surfaceView.getHolder().unlockCanvasAndPost(canvas);
+        }
 //        });
     }
 
