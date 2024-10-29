@@ -16,4 +16,13 @@
     <string name="cp">CP</string>
     <string name="pause">pause</string>
     <string name="resume">resume</string>
+    <string name="ph">PH</string>
+    <string name="focal_length">focal length:</string>
+    <string name="x0">, X0:</string>
+    <string name="y0">, Y0:</string>
+    <string name="h">, H:</string>
+    <string name="x2_y2">(x2, y2):</string>
+    <string name="x1_y1">(x1, y1):</string>
+    <string name="x0_y0">(x0, y0):</string>
+    <string name="x3_y3">(x3, y3):</string>
 </resources>

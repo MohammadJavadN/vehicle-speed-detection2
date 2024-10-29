@@ -50,6 +50,24 @@ public class RoadLine {
 
     }
 
+    public void setCirclesPH(View circle1, View circle2, View circle3, View circle4) {
+        int offsetX = (int) overlay.getX();
+        int offsetY = (int) overlay.getY();
+
+        circle1.setX(0f / 200 * viewW + offsetX);
+        circle1.setY(0f / 200 * viewH + offsetY);
+
+        circle2.setX(100f / 200 * viewW + offsetX);
+        circle2.setY(0f / 200 * viewH + offsetY);
+
+        circle3.setX(100f / 200 * viewW + offsetX);
+        circle3.setY(100f / 200 * viewH + offsetY);
+
+        circle4.setX(0f / 200 * viewW + offsetX);
+        circle4.setY(100f / 200 * viewH + offsetY);
+
+    }
+
     public static void setCirclesSide1(View circle1, View circle2, View circle3, View circle4) {
         circle1.setX(1653f / 2102 * viewW);
         circle1.setY(1218f / 1266 * viewH);

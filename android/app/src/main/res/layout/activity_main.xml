@@ -27,7 +27,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="focal length:" />
+            android:text="@string/focal_length" />
 
         <EditText
             android:id="@+id/f"
@@ -39,7 +39,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=", X0:" />
+            android:text="@string/x0" />
 
         <EditText
             android:id="@+id/XR"
@@ -51,7 +51,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=", Y0:" />
+            android:text="@string/y0" />
 
         <EditText
             android:id="@+id/YR"
@@ -63,7 +63,7 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text=", H:" />
+            android:text="@string/h" />
 
         <EditText
             android:id="@+id/HR"
@@ -73,6 +73,128 @@
             android:text="1.50" />
     </LinearLayout>
 
+    <LinearLayout
+        android:id="@+id/PH_parameters"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/title"
+        android:orientation="vertical"
+        android:visibility="invisible">
+        <LinearLayout
+            android:id="@+id/xy0"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/x0_y0" />
+
+            <EditText
+                android:id="@+id/x0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="0" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=", " />
+            <EditText
+                android:id="@+id/y0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="0" />
+        </LinearLayout>
+        <LinearLayout
+            android:id="@+id/xy1"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/x1_y1" />
+
+            <EditText
+                android:id="@+id/x1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="10" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=", " />
+            <EditText
+                android:id="@+id/y1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="0" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/xy2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/x2_y2" />
+
+            <EditText
+                android:id="@+id/x2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="10" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=", " />
+            <EditText
+                android:id="@+id/y2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="10" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/xy3"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/x3_y3" />
+
+            <EditText
+                android:id="@+id/x3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="0" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=", " />
+            <EditText
+                android:id="@+id/y3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="10" />
+        </LinearLayout>
+    </LinearLayout>
 
     <LinearLayout
         android:id="@+id/IP_layout"
@@ -180,8 +302,15 @@
         android:id="@+id/surfaceView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/pause"
+        android:layout_below="@+id/PH_parameters"
         android:layout_centerHorizontal="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="20dp"
+        android:layout_marginLeft="20dp"
+        android:layout_marginEnd="20dp"
+        android:layout_marginRight="20dp"
+        android:layout_marginBottom="60dp"
+
         android:layout_margin="5dp"
         android:visibility="invisible"
         />
@@ -212,12 +341,11 @@
         android:id="@+id/overlayView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_below="@+id/saveBtn"
+        android:layout_below="@+id/PH_parameters"
         android:layout_alignParentBottom="true"
         android:layout_centerHorizontal="true"
         android:layout_marginStart="20dp"
         android:layout_marginLeft="20dp"
-        android:layout_marginTop="60dp"
         android:layout_marginEnd="20dp"
         android:layout_marginRight="20dp"
         android:layout_marginBottom="60dp"
@@ -379,6 +507,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/cp" />
+        <RadioButton
+            android:id="@+id/radioPH"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/ph" />
     </RadioGroup>
 
 </RelativeLayout>
