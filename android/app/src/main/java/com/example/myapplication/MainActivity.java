@@ -22,11 +22,14 @@ import android.os.Build;
 import android.os.Bundle;
 import android.provider.MediaStore;
 import android.util.Log;
+import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceView;
 import android.view.View;
+import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.RadioButton;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
@@ -881,9 +884,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             pointPaint);
                     int speed;
                     if (isCP)
-                        speed = CPSpeedDetector.predict(x1, y1, x2, y2) / (frameNum2 - frameNum1);
+                        speed = (int) (CPSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1));
                     else
-                        speed = PHSpeedDetector.predict(x1, y1, x2, y2) / (frameNum2 - frameNum1);
+                        speed = (int) (PHSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1));
+
                     canvas.drawText(
                             "Speed: " + speed,
                             50,
@@ -1159,9 +1163,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 canvas.drawLine((float) x1c, (float) y1c, (float) (x / sx), (float) (y / sy), linePaint);
                 int speed;
                 if (isCP)
-                    speed = CPSpeedDetector.predict(x1, y1, x, y) / (frameNum - frameNum1);
+                    speed = (int) (CPSpeedDetector.predict(x1, y1, x, y) * speedCoeff / (frameNum - frameNum1));
                 else
-                    speed = PHSpeedDetector.predict(x1, y1, x, y) / (frameNum - frameNum1);
+                    speed = (int) (PHSpeedDetector.predict(x1, y1, x, y) * speedCoeff / (frameNum - frameNum1));
+
                 canvas.drawText(
                         "Speed: " + speed,
                         50,
@@ -1173,9 +1178,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if (canvas != null) {
                 int speed;
                 if (isCP)
-                    speed = CPSpeedDetector.predict(x1, y1, x2, y2) / (frameNum2 - frameNum1);
+                    speed = (int) (CPSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1));
                 else
-                    speed = PHSpeedDetector.predict(x1, y1, x2, y2) / (frameNum2 - frameNum1);
+                    speed = (int) (PHSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1));
 
                 canvas.drawText(
                         "Speed: " + speed,
@@ -1379,7 +1384,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         startActivityForResult(intent, REQUEST_VIDEO_CODE);
 
     }
-
+    static public float speedCoeff = 1;
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
@@ -1391,6 +1396,20 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 serverWithSpeed = ((RadioButton) findViewById(R.id.radioServer_speed)).isChecked();
                 if (serverWithSpeed)
                     isServer = true;
+//                if (serverWithSpeed) {
+                findViewById(R.id.server_parameters).setVisibility(View.VISIBLE);
+                ((EditText) findViewById(R.id.coeff)).setOnEditorActionListener(new TextView.OnEditorActionListener() {
+                    @Override
+                    public boolean onEditorAction(TextView v, int actionId, KeyEvent event) {
+                        if (actionId == EditorInfo.IME_ACTION_DONE) {
+                            // Handle the action (e.g., submit form or perform action)
+                            speedCoeff = Float.parseFloat(((EditText) findViewById(R.id.coeff)).getText().toString());
+                            return true; // return true if the action was handled
+                        }
+                        return false; // return false if the action was not handled
+                    }
+                });
+//                }
                 if (isServer) {
                     DETECTION_MODE = ObjectDetectorOptions.STREAM_MODE;
                     String ip1, ip2, ip3, ip4, port;
@@ -1415,18 +1434,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     float YR = Float.parseFloat(((EditText) findViewById(R.id.YR)).getText().toString());
                     float HR = Float.parseFloat(((EditText) findViewById(R.id.HR)).getText().toString());
                     CPSpeedDetector.init(f, XR, YR, HR);
-                } else if (isPH){
-//                    double x0 = Double.parseDouble(((EditText) findViewById(R.id.x0)).getText().toString());
-//                    double y0 = Double.parseDouble(((EditText) findViewById(R.id.y0)).getText().toString());
-//                    double x1 = Double.parseDouble(((EditText) findViewById(R.id.x1)).getText().toString());
-//                    double y1 = Double.parseDouble(((EditText) findViewById(R.id.y1)).getText().toString());
-//                    double x2 = Double.parseDouble(((EditText) findViewById(R.id.x2)).getText().toString());
-//                    double y2 = Double.parseDouble(((EditText) findViewById(R.id.y2)).getText().toString());
-//                    double x3 = Double.parseDouble(((EditText) findViewById(R.id.x3)).getText().toString());
-//                    double y3 = Double.parseDouble(((EditText) findViewById(R.id.y3)).getText().toString());
-//
-//                    double[] x = {x0, x1, x2, x3};
-//                    double[] y = {y0, y1, y2, y3};
+                }
+                if (isPH){
+                    findViewById(R.id.PH_parameters).setVisibility(View.VISIBLE);
                 }
                 if (isCP | isPH)
                 {
@@ -1458,7 +1468,6 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 findViewById(R.id.IP_layout).setVisibility(View.GONE);
                 findViewById(R.id.url_layout).setVisibility(View.GONE);
                 findViewById(R.id.parameters).setVisibility(View.GONE);
-                findViewById(R.id.PH_parameters).setVisibility(View.VISIBLE);
                 findViewById(R.id.surfaceView).setVisibility(View.VISIBLE);
 
 

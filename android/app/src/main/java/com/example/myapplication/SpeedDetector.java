@@ -1,5 +1,7 @@
 package com.example.myapplication;
 
+import static com.example.myapplication.MainActivity.speedCoeff;
+
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -229,6 +231,8 @@ public abstract class SpeedDetector {
     }
 
     public void draw(Canvas canvas, Rect rect, float speed, int id) {
+        speed = (int) (speed * speedCoeff);
+
         // Decide color based on object tracking ID
         int colorID = id % NUM_COLORS;
 

@@ -74,6 +74,29 @@
     </LinearLayout>
 
     <LinearLayout
+        android:id="@+id/server_parameters"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/title"
+        android:layout_toEndOf="@+id/PH_parameters"
+        android:orientation="horizontal"
+        android:visibility="invisible">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/coeff" />
+
+        <EditText
+            android:id="@+id/coeff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal"
+            android:text="1" />
+
+    </LinearLayout>
+
+    <LinearLayout
         android:id="@+id/PH_parameters"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

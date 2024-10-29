@@ -329,7 +329,6 @@ public class CPSpeedDetector extends SpeedDetector {
 
                     if (pixelSpeed > 15) {
                         float predictedSpeed = predict(a, b, c, d);
-                        predictedSpeed = (float) (predictedSpeed * Math.pow(1920 / imW, 0.08) * 1.2);
                         List<Integer> gridSpeed = new ArrayList<>();
                         gridSpeed.add((int) (a));
                         gridSpeed.add((int) (b));
