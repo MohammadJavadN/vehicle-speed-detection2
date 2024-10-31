@@ -78,7 +78,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_below="@id/title"
-        android:layout_toEndOf="@+id/PH_parameters"
+        android:layout_toEndOf="@+id/saveBtn"
         android:orientation="horizontal"
         android:visibility="invisible">
 
@@ -410,48 +410,60 @@
         android:visibility="invisible"
         tools:ignore="UseSwitchCompatOrMaterialXml" />
 
-    <View
+    <TextView
         android:id="@+id/circle1"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:layout_alignStart="@+id/overlayView"
         android:layout_alignTop="@+id/overlayView"
         android:layout_marginStart="263dp"
         android:layout_marginTop="308dp"
         android:background="@drawable/circle_shape"
+        android:text="0"
+        android:textAlignment="center"
+        android:textColor="@color/white"
         android:visibility="invisible" />
 
-    <View
+    <TextView
         android:id="@+id/circle2"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:layout_alignStart="@+id/overlayView"
         android:layout_alignTop="@+id/overlayView"
         android:layout_marginStart="312dp"
         android:layout_marginTop="406dp"
         android:background="@drawable/circle_shape"
+        android:text="1"
+        android:textAlignment="center"
+        android:textColor="@color/white"
         android:visibility="invisible" />
 
-    <View
+    <TextView
         android:id="@+id/circle3"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:layout_alignStart="@+id/overlayView"
         android:layout_alignTop="@+id/overlayView"
         android:layout_marginStart="32dp"
         android:layout_marginTop="352dp"
         android:background="@drawable/circle_shape"
+        android:text="2"
+        android:textAlignment="center"
+        android:textColor="@color/white"
         android:visibility="invisible" />
 
-    <View
+    <TextView
         android:id="@+id/circle4"
-        android:layout_width="25dp"
-        android:layout_height="25dp"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
         android:layout_alignStart="@+id/overlayView"
         android:layout_alignTop="@+id/overlayView"
         android:layout_marginStart="102dp"
         android:layout_marginTop="453dp"
         android:background="@drawable/circle_shape"
+        android:text="3"
+        android:textAlignment="center"
+        android:textColor="@color/white"
         android:visibility="invisible" />
 
     <Button
@@ -536,5 +548,16 @@
             android:layout_height="wrap_content"
             android:text="@string/ph" />
     </RadioGroup>
+
+    <Switch
+        android:id="@+id/semiAutoSelectSwitch"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="semiAutoSelect"
+        android:layout_below="@id/server_parameters"
+        android:layout_toEndOf="@id/saveBtn"
+        android:visibility="invisible"
+        />
 
 </RelativeLayout>

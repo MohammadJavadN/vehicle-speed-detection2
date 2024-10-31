@@ -29,6 +29,7 @@ import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.widget.EditText;
 import android.widget.RadioButton;
+import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -102,9 +103,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private static final String outVideoFileName = "out.mp4";
     private static final Size WIN_SIZE = new Size(15, 15);
     private static final TermCriteria CRITERIA = new TermCriteria(TermCriteria.COUNT + TermCriteria.EPS,
-            10,
+            7,
             0.03);
-    private static final int MAX_LEVEL = 2;
+    private static final int MAX_LEVEL = 20;
     public static int DETECTION_MODE = ObjectDetectorOptions.SINGLE_IMAGE_MODE;
     public static boolean isBusy = false;
     static int state = 1;
@@ -116,6 +117,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private static String outVideoPath = "/sdcard/Download/ou_.mp4";
     private static int maxFrames = 500;
     private static VideoCapture cap;
+    static double fps = 25;
     private static MyVideoEncoder out;
     private static LicensePlateDetectorFloat32 plateDetectorModel;
     private static SpeedPredictionTopViewNoPlateModel speedPredictionTopViewNoPlateModel;
@@ -820,22 +822,24 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 Point selectedP = new Point(x1, y1);
                 prevGray = new Mat();
                 Imgproc.cvtColor(frame2, prevGray, Imgproc.COLOR_BGR2GRAY);
-//                MatOfPoint p0MatofPoint = new MatOfPoint();
-//                Imgproc.goodFeaturesToTrack(prevGray, p0MatofPoint,1000,0.3,7, new Mat(),7,false,0.04);
-//
-//                Point[] points = p0MatofPoint.toArray();
-//                double minD = 300;
-//                for (Point p:points) {
-//                    double d = d2(p, userSelectedP);
-//                    if (d < minD) {
-//                        minD = d;
-//                        selectedP = p.clone();
-//                    }
-//                }
-//                x1c = selectedP.x/sx;
-//                y1c = selectedP.y/sy;
-//                x1 = (x1c) * sx;
-//                y1 = (y1c) * sy;
+                if (((Switch) findViewById(R.id.semiAutoSelectSwitch)).isChecked()) {
+                    MatOfPoint p0MatofPoint = new MatOfPoint();
+                    Imgproc.goodFeaturesToTrack(prevGray, p0MatofPoint, 1000, 0.3, 7, new Mat(), 7, false, 0.04);
+
+                    Point[] points = p0MatofPoint.toArray();
+                    double minD = 300;
+                    for (Point p : points) {
+                        double d = d2(p, userSelectedP);
+                        if (d < minD) {
+                            minD = d;
+                            selectedP = p.clone();
+                        }
+                    }
+                    x1c = selectedP.x / sx;
+                    y1c = selectedP.y / sy;
+                    x1 = (x1c) * sx;
+                    y1 = (y1c) * sy;
+                }
 
                 prevPts = new ArrayList<>();
                 prevPts.add(selectedP);
@@ -884,9 +888,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             pointPaint);
                     int speed;
                     if (isCP)
-                        speed = (int) (CPSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1));
+                        speed = (int) (CPSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1) * fps);
                     else
-                        speed = (int) (PHSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1));
+                        speed = (int) (PHSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1) * fps);
 
                     canvas.drawText(
                             "Speed: " + speed,
@@ -1163,9 +1167,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 canvas.drawLine((float) x1c, (float) y1c, (float) (x / sx), (float) (y / sy), linePaint);
                 int speed;
                 if (isCP)
-                    speed = (int) (CPSpeedDetector.predict(x1, y1, x, y) * speedCoeff / (frameNum - frameNum1));
+                    speed = (int) (CPSpeedDetector.predict(x1, y1, x, y) * speedCoeff / (frameNum - frameNum1) * fps);
                 else
-                    speed = (int) (PHSpeedDetector.predict(x1, y1, x, y) * speedCoeff / (frameNum - frameNum1));
+                    speed = (int) (PHSpeedDetector.predict(x1, y1, x, y) * speedCoeff / (frameNum - frameNum1) * fps);
 
                 canvas.drawText(
                         "Speed: " + speed,
@@ -1178,9 +1182,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             if (canvas != null) {
                 int speed;
                 if (isCP)
-                    speed = (int) (CPSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1));
+                    speed = (int) (CPSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1) * fps);
                 else
-                    speed = (int) (PHSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1));
+                    speed = (int) (PHSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1) * fps);
 
                 canvas.drawText(
                         "Speed: " + speed,
@@ -1358,7 +1362,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         cap = new VideoCapture();
         cap.open(inVideoPath);
 
-        double fps = cap.get(Videoio.CAP_PROP_FPS);
+        fps = cap.get(Videoio.CAP_PROP_FPS);
         int width = (int) cap.get(Videoio.CAP_PROP_FRAME_WIDTH);
         int height = (int) cap.get(Videoio.CAP_PROP_FRAME_HEIGHT);
 
@@ -1442,6 +1446,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 {
                     findViewById(R.id.pause).setVisibility(View.VISIBLE);
                     findViewById(R.id.resume).setVisibility(View.INVISIBLE);
+                    findViewById(R.id.semiAutoSelectSwitch).setVisibility(View.VISIBLE);
                     pause = false;
                 } else {
                     findViewById(R.id.pause).setVisibility(View.GONE);
@@ -1459,7 +1464,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                     FRAME_STEP = 1;
                 } else {
                     FRAME_STEP = 1;
-                    inVideoPath = "/sdcard/Download/Video(1).mp4"; // top
+                    inVideoPath = "/sdcard/Download/out_top_no_plate.mp4"; // top
                 }
 
                 System.out.println("*** " + inVideoPath);

@@ -58,8 +58,8 @@ public class CPSpeedDetector extends SpeedDetector {
     public void init(double f, double x_R, double y_R, double h_R) {
         alpha= Math.atan(y_R/h_R);
         beta = Math.atan(x_R/sqrt(y_R*y_R+h_R*h_R));
-        alpha = Math.toRadians(alpha);
-        beta = Math.toRadians(beta);
+//        alpha = Math.toDegrees(alpha);
+//        beta = Math.toDegrees(beta);
 //        this.lambda = lambda;
         this.f = f;
         X_R = x_R;
@@ -264,7 +264,7 @@ public class CPSpeedDetector extends SpeedDetector {
 
         // Compute x_p and y_p for the next data point
         x_p = (1.0 / (100.0 * lambda)) * (xp2 - (imW / 2.0));
-        y_p = (1.0 / (100.0 * lambda)) * ((imW / 2.0) - yp2);
+        y_p = (1.0 / (100.0 * lambda)) * ((imH / 2.0) - yp2);
 
         denominator = (a * x_p + b * y_p + c * f);
         if (denominator == 0) {
@@ -289,7 +289,7 @@ public class CPSpeedDetector extends SpeedDetector {
         double x_o = x_real1 - x_real;
         double y_o = y_real1 - y_real; // Corrected from x_real1 - y_real
         double L_val = Math.sqrt(x_o * x_o + y_o * y_o);
-        return (int) ((L_val * 30 * 3600.0) / 1000.0);
+        return (int) ((L_val * 3600.0) / 1000.0);
     }
 
     private void predictSpeed(Mat frameGray) {
@@ -328,7 +328,7 @@ public class CPSpeedDetector extends SpeedDetector {
                     double pixelSpeed = Math.sqrt(Math.pow(a - c, 2) + Math.pow(b - d, 2));
 
                     if (pixelSpeed > 15) {
-                        float predictedSpeed = predict(a, b, c, d);
+                        float predictedSpeed = predict(a, b, c, d); // TODO: 31.10.24 apply fps
                         List<Integer> gridSpeed = new ArrayList<>();
                         gridSpeed.add((int) (a));
                         gridSpeed.add((int) (b));

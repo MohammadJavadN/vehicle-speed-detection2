@@ -201,8 +201,8 @@ public class RoadLine {
                 || event.getRawY() > overlay.getY() + overlay.getHeight()
         )
             return;
-        circle.setX((int) event.getRawX());
-        circle.setY((int) event.getRawY());
+        circle.setX((int) event.getRawX() - (float) circle.getWidth() / 2);
+        circle.setY((int) event.getRawY() - (float) circle.getHeight() / 2);
     }
 
     private double calculateLocalCoefficient(Point point) {

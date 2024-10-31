@@ -154,6 +154,7 @@ public class PHSpeedDetector extends SpeedDetector {
         double u_c2 = CI * (u2 - meanU);
         double v_c2 = CI * (v2 - meanV);
 
+        t = 1;
         double[] vectorData1 = {u_c1*t, v_c1*t, t};
         RealVector i1 = new ArrayRealVector(vectorData1);
 
@@ -277,8 +278,8 @@ public class PHSpeedDetector extends SpeedDetector {
         if (!initiated)
             return -1;
         double L = calculateRealL(u1, v1, u2, v2);
-        double T = 1.0/30.0;
-        return (int) (L/T); // TODO: 29.10.24 calc T
+        double T = 1.0;
+        return (int) (L/T * 3600.0 / 1000.0); // TODO: 29.10.24 calc T
     }
 
     private void predictSpeed(Mat frameGray) {
@@ -317,7 +318,7 @@ public class PHSpeedDetector extends SpeedDetector {
                     double pixelSpeed = Math.sqrt(Math.pow(a - c, 2) + Math.pow(b - d, 2));
 
                     if (pixelSpeed > 15) {
-                        float predictedSpeed = predict(a, b, c, d);
+                        float predictedSpeed = predict(a, b, c, d); // TODO: 31.10.24 apply fps
                         List<Integer> gridSpeed = new ArrayList<>();
                         gridSpeed.add((int) (a));
                         gridSpeed.add((int) (b));
