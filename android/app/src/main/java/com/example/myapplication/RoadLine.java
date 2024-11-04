@@ -282,6 +282,56 @@ public class RoadLine {
         return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
     }
 
+
+    void drawLine(Canvas canvas, float x1, float y1, float x2, float y2, int offsetX, int offsetY, float sx, float sy) {
+        x1 = (x1 - offsetX) * sx;
+        y1 = (y1 - offsetY) * sy;
+        x2 = (x2 - offsetX) * sx;
+        y2 = (y2 - offsetY) * sy;
+        float dx = x2 - x1;
+        float dy = y2 - y1;
+
+        int w = canvas.getWidth();
+        int h = canvas.getHeight();
+
+        float o, s, X1, X2, Y1, Y2;
+
+        o = x1;
+        if (y1 < y2)
+            s = (h-y1)/dy*dx;
+        else
+            s = -y1/dy*dx;
+        X1 = min(max(o + s, 0), w);
+
+        o = x2;
+        if (y1 > y2)
+            s = (h-y2)/dy*dx;
+        else
+            s = -y2/dy*dx;
+        X2 = min(max(o + s, 0), w);
+
+        o = y1;
+        if (x1 < x2)
+            s = (w-x1)/dx*dy;
+        else
+            s = -x1/dx*dy;
+        Y1 = min(max(o + s, 0), h);
+
+        o = y2;
+        if (x1 > x2)
+            s = (w-x2)/dx*dy;
+        else
+            s = -x2/dx*dy;
+        Y2 = min(max(o + s, 0), h);
+
+        canvas.drawLine(X1, Y1, X2, Y2, linePaint);
+    }
+    public void drawLines(Canvas canvas,  int offsetX, int offsetY, float sx, float sy) {
+        drawLine(canvas, circle1.getX(), circle1.getY(), circle2.getX(), circle2.getY(), offsetX, offsetY, sx, sy);
+        drawLine(canvas, circle3.getX(), circle3.getY(), circle2.getX(), circle2.getY(), offsetX, offsetY, sx, sy);
+        drawLine(canvas, circle3.getX(), circle3.getY(), circle4.getX(), circle4.getY(), offsetX, offsetY, sx, sy);
+        drawLine(canvas, circle1.getX(), circle1.getY(), circle4.getX(), circle4.getY(), offsetX, offsetY, sx, sy);
+    }
     public void drawLines(Canvas canvas) {
         if (circle1 == null)
             return;

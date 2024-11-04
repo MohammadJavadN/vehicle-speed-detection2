@@ -38,9 +38,6 @@ public class CPSpeedDetector extends SpeedDetector {
     double beta;   // Example: 45 degrees converted to radians
     double lambda = 1.0 / 0.0264583333;                   // Example value
     double f = 50.0;                       // Example focal length or another parameter
-    double X_R = 10.0;                     // Example rotation or position parameter
-    double Y_R = 20.0;                     // Example rotation or position parameter
-    double H_R = 30.0;                     // Example rotation or position parameter
     double x1, y1, z1;
     double a, b, c;
     RealMatrix A_inv;
@@ -55,21 +52,18 @@ public class CPSpeedDetector extends SpeedDetector {
         super(fq);
     }
 
-    public void init(double f, double x_R, double y_R, double h_R) {
-        alpha= Math.atan(y_R/h_R);
-        beta = Math.atan(x_R/sqrt(y_R*y_R+h_R*h_R));
+    public void init(double f, double X_0, double Y_0, double H, double lambda, double XR, double YR, double HR) {
+        alpha= Math.atan(Y_0 / H);
+        beta = Math.atan(X_0 /sqrt(Y_0 * Y_0 + H * H));
 //        alpha = Math.toDegrees(alpha);
 //        beta = Math.toDegrees(beta);
-//        this.lambda = lambda;
+        this.lambda = lambda;
         this.f = f;
-        X_R = x_R;
-        Y_R = y_R;
-        H_R = h_R;
         // Step 1: Define Rx matrix
         double[][] RxData = {
                 {1, 0, 0},
-                {0, Math.cos(this.alpha), -Math.sin(this.alpha)},
-                {0, Math.sin(this.alpha), Math.cos(this.alpha)}
+                {0, Math.cos(this.alpha), Math.sin(this.alpha)},
+                {0, -Math.sin(this.alpha), Math.cos(this.alpha)}
         };
         RealMatrix Rx = MatrixUtils.createRealMatrix(RxData);
 
@@ -98,15 +92,17 @@ public class CPSpeedDetector extends SpeedDetector {
         }
 
         // Step 5: Determine nx, ny, nz based on X_R, Y_R, H_R
-        int nx = (X_R == 0) ? 0 : 1;
-        int ny = (Y_R == 0) ? 0 : 1;
-        int nz = (H_R == 0) ? 0 : 1;
+        int nx = (XR == 0) ? 0 : 1;
+        int ny = (YR == 0) ? 0 : 1;
+        int nz = (HR == 0) ? 0 : 1;
+
+        nx = 0; ny = 0; nz = 1;
 
         // Step 6: Define R_r matrix
         double[][] R_rData = {
-                {X_R},
-                {Y_R},
-                {H_R}
+                {XR},
+                {YR},
+                {HR}
         };
         RealMatrix R_r = MatrixUtils.createRealMatrix(R_rData);
 
@@ -130,6 +126,13 @@ public class CPSpeedDetector extends SpeedDetector {
         b = T.getEntry(1, 0);
         c = T.getEntry(2, 0);
 
+        System.out.println("@@@ Ry = " + Ry);
+        System.out.println("@@@ Rx = " + Rx);
+        System.out.println("@@@ A = " + A);
+        System.out.println("@@@ R_r = " + R_r);
+        System.out.println("@@@ alpha = " + alpha + ", beta=" + beta);
+        System.out.println("@@@ a = " + a + ", b=" + b + ", c=" + c);
+        System.out.println("@@@ x1 = " + x1 + ", y1=" + y1 + ", z1=" + z1);
         grayFrames = new ArrayList<>(fq);
         for (int i = 0; i < fq; i++) {
             grayFrames.add(new Mat());
@@ -241,6 +244,11 @@ public class CPSpeedDetector extends SpeedDetector {
         double x_p = (1.0 / (100.0 * lambda)) * (xp1 - (imW / 2.0));
         double y_p = (1.0 / (100.0 * lambda)) * ((imH / 2.0) - yp1);
 
+        System.out.println("!@# imW= " + imW + ", imH = " + imH);
+        System.out.println("!@# xp1= " + xp1 + ", yp1 = " + yp1);
+        System.out.println("!@# xp2= " + xp2 + ", yp2 = " + yp2);
+        System.out.println("!@# x_p= " + x_p + ", y_p = " + y_p);
+
         double denominator = (a * x_p + b * y_p + c * f);
         if (denominator == 0) {
             System.err.println("Denominator in t calculation is zero. Cannot divide by zero.");
@@ -248,6 +256,7 @@ public class CPSpeedDetector extends SpeedDetector {
         }
 
         double t = (a * x1 + b * y1 + c * z1) / denominator;
+        System.out.println("!@# t= " + t);
 
         double[][] wData = {
                 {x_p * t},
@@ -265,6 +274,7 @@ public class CPSpeedDetector extends SpeedDetector {
         // Compute x_p and y_p for the next data point
         x_p = (1.0 / (100.0 * lambda)) * (xp2 - (imW / 2.0));
         y_p = (1.0 / (100.0 * lambda)) * ((imH / 2.0) - yp2);
+        System.out.println("!@# x_p2= " + x_p + ", y_p2= " + y_p);
 
         denominator = (a * x_p + b * y_p + c * f);
         if (denominator == 0) {
@@ -289,6 +299,8 @@ public class CPSpeedDetector extends SpeedDetector {
         double x_o = x_real1 - x_real;
         double y_o = y_real1 - y_real; // Corrected from x_real1 - y_real
         double L_val = Math.sqrt(x_o * x_o + y_o * y_o);
+        System.out.println("!@# L_val= " + L_val);
+
         return (int) ((L_val * 3600.0) / 1000.0);
     }
 
@@ -345,6 +357,11 @@ public class CPSpeedDetector extends SpeedDetector {
 //        prevGray = frameGray.clone();
 
         // Return the processed frame
+    }
+
+    public void setImSize(int imW, int imH) {
+        this.imW = imW;
+        this.imH = imH;
     }
 
 

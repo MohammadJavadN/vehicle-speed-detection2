@@ -22,55 +22,112 @@
         android:layout_height="wrap_content"
         android:layout_below="@id/title"
         android:layout_centerHorizontal="true"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
-        <TextView
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="@string/focal_length" />
+            android:layout_centerHorizontal="true"
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/focal_length" />
 
-        <EditText
-            android:id="@+id/f"
+            <EditText
+                android:id="@+id/f"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="0.0034" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/x0" />
+
+            <EditText
+                android:id="@+id/X0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="137.3" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/y0" />
+
+            <EditText
+                android:id="@+id/Y0"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="-0.2" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/h" />
+
+            <EditText
+                android:id="@+id/H"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="20.0" />
+        </LinearLayout>
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:inputType="numberDecimal"
-            android:text="77.0" />
+            android:orientation="horizontal">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="lambda:" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/x0" />
+            <EditText
+                android:id="@+id/lambda"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="0.0034" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=", XR:" />
 
-        <EditText
-            android:id="@+id/XR"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal"
-            android:text="14.0" />
+            <EditText
+                android:id="@+id/XR"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="0" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/y0" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=", YR:" />
 
-        <EditText
-            android:id="@+id/YR"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal"
-            android:text="9.0" />
+            <EditText
+                android:id="@+id/YR"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="0" />
 
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/h" />
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text=", HR:" />
 
-        <EditText
-            android:id="@+id/HR"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:inputType="numberDecimal"
-            android:text="1.50" />
+            <EditText
+                android:id="@+id/HR"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:inputType="numberDecimal"
+                android:text="20.0" />
+        </LinearLayout>
     </LinearLayout>
 
     <LinearLayout
@@ -412,8 +469,8 @@
 
     <TextView
         android:id="@+id/circle1"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignStart="@+id/overlayView"
         android:layout_alignTop="@+id/overlayView"
         android:layout_marginStart="263dp"
@@ -426,8 +483,8 @@
 
     <TextView
         android:id="@+id/circle2"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignStart="@+id/overlayView"
         android:layout_alignTop="@+id/overlayView"
         android:layout_marginStart="312dp"
@@ -440,8 +497,8 @@
 
     <TextView
         android:id="@+id/circle3"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignStart="@+id/overlayView"
         android:layout_alignTop="@+id/overlayView"
         android:layout_marginStart="32dp"
@@ -454,8 +511,8 @@
 
     <TextView
         android:id="@+id/circle4"
-        android:layout_width="20dp"
-        android:layout_height="20dp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
         android:layout_alignStart="@+id/overlayView"
         android:layout_alignTop="@+id/overlayView"
         android:layout_marginStart="102dp"
@@ -559,5 +616,39 @@
         android:layout_toEndOf="@id/saveBtn"
         android:visibility="invisible"
         />
+
+    <Switch
+        android:id="@+id/showLines"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:text="Show Lines"
+        android:layout_below="@id/semiAutoSelectSwitch"
+        android:layout_toEndOf="@id/saveBtn"
+        android:visibility="invisible"
+        />
+
+    <LinearLayout
+        android:id="@+id/circlesR"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:visibility="invisible"
+        android:layout_below="@id/showLines"
+        android:layout_toEndOf="@id/saveBtn"
+        >
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Radius" />
+
+        <EditText
+            android:id="@+id/radius"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:inputType="numberDecimal"
+            android:text="10" />
+    </LinearLayout>
 
 </RelativeLayout>
