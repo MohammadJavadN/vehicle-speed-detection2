@@ -19,7 +19,7 @@ import com.google.mlkit.vision.GraphicOverlay;
 import org.opencv.core.Point;
 
 public class RoadLine {
-    public static float globalCoeff = 1810f;
+    public static float globalCoeff = 9000f;
     private static float viewW, viewH;
     private final Paint linePaint = new Paint();
     private final RectF inside = new RectF(0.1f, 0.1f, 0.9f, 0.9f);
@@ -172,18 +172,18 @@ public class RoadLine {
 
         point1 = new Point(
                 max(min(x3 + dx1 * Y3 / abs(dy1), w - 1), 0),
-                min(max(y3 - dy1 * (X3) / abs(dx1), 1), h)
+                min(max(y3 - dy1 * (X3) / abs(dx1), 0), h)
         );
         point2 = new Point(
                 max(min(x4 + dx2 * Y4 / abs(dy2), w - 1), 0),
-                min(max(y4 - (dy2 * (X4) / abs(dx2)), 1), h)
+                min(max(y4 - (dy2 * (X4) / abs(dx2)), 0), h)
         );
         point3 = new Point(
-                min(max(x1 - dx1 * (Y1) / abs(dy1), 1), w),
+                min(max(x1 - dx1 * (Y1) / abs(dy1), 0), w),
                 max(min(y1 + dy1 * X1 / abs(dx1), h - 1), 0)
         );
         point4 = new Point(
-                min(max(x2 - dx2 * (Y2) / abs(dy2), 1), w),
+                min(max(x2 - dx2 * (Y2) / abs(dy2), 0), w),
                 max(min(y2 + dy2 * X2 / abs(dx2), h - 1), 0)
         );
         P1 = new Point((point1.x + point2.x) / 2, (point1.y + point2.y) / 2);
@@ -209,10 +209,9 @@ public class RoadLine {
         double d1 = pow(d(point, P1), 4.5);
         double d2 = pow(d(point, P2), 4.5);
         double tmp = ((W1 * d2 + W2 * d1) / (d1 + d2) / max(W1, W2));
-        tmp /= overlay.getHeight() / abs(P1.y - P2.y);
+//        tmp /= overlay.getHeight() / abs(P1.y - P2.y);
         return 1 / (tmp);
     }
-
     public Point calculateSignSpeed(Point pN1, Point pN2, float frames) {
         float[] pts = {(float) pN1.x, (float) pN1.y};
 
@@ -223,7 +222,24 @@ public class RoadLine {
 
         double coef = calculateLocalCoefficient(new Point(pts[0], pts[1]));
 
-        Point speed = new Point((coef * globalCoeff * dx / frames), (coef * globalCoeff * (dy) / frames));
+        Point speed = new Point((coef * globalCoeff * dx / frames), (coef * globalCoeff * (dy / frames)));
+        double cosine = abs(speed.dot(normalLineVector) / sqrt(norm2(speed)));
+
+        return new Point(speed.x * cosine, speed.y * cosine);
+    }
+
+    public Point calculateSignSpeed(Point pN1, Point pN2) {
+        float[] pts = {(float) (pN1.x*0.4 + pN2.x*0.6)/2, (float) (pN1.y*0.6 + pN2.y*0.4)/2};
+//        float[] pts = {(float) pN1.x, (float) pN1.y};
+
+        double dx = (pN2.x - pN1.x);
+        double dy = (pN2.y - pN1.y);
+
+        normToViewTransform.mapPoints(pts);
+
+        double coef = calculateLocalCoefficient(new Point(pts[0], pts[1]));
+
+        Point speed = new Point((coef * globalCoeff * dx), (coef * globalCoeff * (dy)));
         double cosine = abs(speed.dot(normalLineVector) / sqrt(norm2(speed)));
 
         return new Point(speed.x * cosine, speed.y * cosine);
@@ -326,7 +342,7 @@ public class RoadLine {
 
         canvas.drawLine(X1, Y1, X2, Y2, linePaint);
     }
-    public void drawLines(Canvas canvas,  int offsetX, int offsetY, float sx, float sy) {
+    public void drawLines(Canvas canvas, int offsetX, int offsetY, float sx, float sy) {
         drawLine(canvas, circle1.getX(), circle1.getY(), circle2.getX(), circle2.getY(), offsetX, offsetY, sx, sy);
         drawLine(canvas, circle3.getX(), circle3.getY(), circle2.getX(), circle2.getY(), offsetX, offsetY, sx, sy);
         drawLine(canvas, circle3.getX(), circle3.getY(), circle4.getX(), circle4.getY(), offsetX, offsetY, sx, sy);
@@ -342,6 +358,20 @@ public class RoadLine {
 
         canvas.drawLine((int) (point3.x * sx), (int) (point3.y * sy), (int) (point1.x * sx), (int) (point1.y * sy), linePaint);
         canvas.drawLine((int) (point2.x * sx), (int) (point2.y * sy), (int) (point4.x * sx), (int) (point4.y * sy), linePaint);
+        canvas.drawCircle((float) (P1.x * sx), (float) (P1.y * sy), 15, linePaint);
+        canvas.drawCircle((float) (P2.x * sx), (float) (P2.y * sy), 15, linePaint);
+    }
+    public void drawRoadLines(Canvas canvas, int offsetX, int offsetY) {
+        if (circle1 == null)
+            return;
+        updateParameters();
+
+        float sx = 1;
+        float sy = 1;
+        drawLine(canvas, circle1.getX(), circle1.getY(), circle3.getX(), circle3.getY(), offsetX, offsetY, sx, sy);
+        drawLine(canvas, circle4.getX(), circle4.getY(), circle2.getX(), circle2.getY(), offsetX, offsetY, sx, sy);
+//        canvas.drawLine((float) (point3.x * sx), (float) (point3.y * sy), (float) (point1.x * sx), (float) (point1.y * sy), linePaint);
+//        canvas.drawLine((float) (point2.x * sx), (float) (point2.y * sy), (float) (point4.x * sx), (float) (point4.y * sy), linePaint);
         canvas.drawCircle((float) (P1.x * sx), (float) (P1.y * sy), 15, linePaint);
         canvas.drawCircle((float) (P2.x * sx), (float) (P2.y * sy), 15, linePaint);
     }

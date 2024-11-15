@@ -188,10 +188,11 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     private OptSpeedDetector sideSpeedDetector;
     private CPSpeedDetector CPSpeedDetector;
     private PHSpeedDetector PHSpeedDetector;
+    private RLSpeedDetector RLSpeedDetector;
     private ServerSpeedDetector serverSpeedDetector;
     private GraphicOverlay graphicOverlay;
     private View circle1, circle2, circle3, circle4;
-    private boolean isServer, isTOF, isSide, isCP, isPH, serverWithSpeed;
+    private boolean isServer, isTOF, isSide, isCP, isPH, isRL, serverWithSpeed;
 
     public static int getId(float x, float y, int imW) {
         int gs = (int) (imW / 4.8);  // grid_width
@@ -724,6 +725,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         graphicOverlay.roadLine.initializeCircles(circle1, circle2, circle3, circle4);
         if (isPH) {
             graphicOverlay.roadLine.setCirclesPH(circle1, circle2, circle3, circle4);
+        }
+        if (isPH || isRL) {
             graphicOverlay.roadLine.setVisible(View.VISIBLE);
         }
 //        findViewById(R.id.changBtn).setVisibility(View.VISIBLE);
@@ -795,7 +798,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
     @Override
     public boolean onTouch(View v, MotionEvent event) {
         if (v.getId() == R.id.surfaceView && event.getAction() == MotionEvent.ACTION_UP
-        && (isPH | isCP)) {
+        && (isPH | isCP | isRL)) {
 
             Utils.matToBitmap(frame2, bitmap2);
             Canvas canvas = surfaceView.getHolder().lockCanvas();
@@ -885,11 +888,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             (float) y2c,
                             2,
                             pointPaint);
-                    int speed;
+                    int speed = -1;
                     if (isCP)
                         speed = (int) (CPSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1) * fps);
-                    else
+                    else if (isPH)
                         speed = (int) (PHSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1) * fps);
+                    else if (isRL)
+                        speed = (int) (RLSpeedDetector.predict(x1, y1, x2, y2, frameNum2 - frameNum1) * speedCoeff * fps);
+
                     canvas.drawText(
                             "Speed: " + speed,
                             50,
@@ -906,20 +912,26 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 
         } else if (event.getAction() == MotionEvent.ACTION_MOVE && v.getId() != R.id.surfaceView) {
             graphicOverlay.roadLine.movePoint(v, event);
-            initPH();
-            if (((Switch) findViewById(R.id.showLines)).isChecked()) {
-                int offsetX = (int) surfaceView.getX() - circle1.getWidth() / 2;
-                int offsetY = (int) surfaceView.getY() - circle1.getHeight() / 2;
-                Canvas canvas = surfaceView.getHolder().lockCanvas();
-                if (canvas != null) {
-                    // Render the frame onto the canvas
-                    int w = canvas.getWidth();
-                    int h = canvas.getHeight();
-                    Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap2, w, h, false);
-                    canvas.drawBitmap(scaledBitmap, 0, 0, null);
+            if (isPH)
+                initPH();
+            if (isPH | isRL) {
+                if (((Switch) findViewById(R.id.showLines)).isChecked()) {
+                    int offsetX = (int) surfaceView.getX() - circle1.getWidth() / 2;
+                    int offsetY = (int) surfaceView.getY() - circle1.getHeight() / 2;
+                    Canvas canvas = surfaceView.getHolder().lockCanvas();
+                    if (canvas != null) {
+                        // Render the frame onto the canvas
+                        int w = canvas.getWidth();
+                        int h = canvas.getHeight();
+                        Bitmap scaledBitmap = Bitmap.createScaledBitmap(bitmap2, w, h, false);
+                        canvas.drawBitmap(scaledBitmap, 0, 0, null);
 
-                    graphicOverlay.roadLine.drawLines(canvas, offsetX, offsetY, 1, 1);
-                    surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                        if (isPH)
+                            graphicOverlay.roadLine.drawLines(canvas, offsetX, offsetY, 1, 1);
+                        else if (isRL)
+                            graphicOverlay.roadLine.drawRoadLines(canvas, offsetX, offsetY);
+                        surfaceView.getHolder().unlockCanvasAndPost(canvas);
+                    }
                 }
             }
         }
@@ -1055,7 +1067,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         context = this;
         frame2 = new Mat();
         Runnable updateFrameTask;
-        if (isCP | isPH) {
+        if (isCP | isPH | isRL) {
             updateFrameTask = () -> {
                 if (!isBusy) {
                     boolean ret = false;
@@ -1176,12 +1188,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                         2,
                         pointPaint);
                 canvas.drawLine((float) x1c, (float) y1c, (float) (x / sx), (float) (y / sy), linePaint);
-                int speed;
+                int speed = -1;
                 if (isCP)
                     speed = (int) (CPSpeedDetector.predict(x1, y1, x, y) * speedCoeff / (frameNum - frameNum1) * fps);
-                else
+                else if (isPH)
                     speed = (int) (PHSpeedDetector.predict(x1, y1, x, y) * speedCoeff / (frameNum - frameNum1) * fps);
-
+                else if (isRL) {
+                    speed = (int) (RLSpeedDetector.predict(x1, y1, x, y, frameNum - frameNum1) * speedCoeff * fps);
+                }
                 canvas.drawText(
                         "Speed: " + speed,
                         50,
@@ -1191,11 +1205,13 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         }
         if (p2Selected) {
             if (canvas != null) {
-                int speed;
+                int speed = -1;
                 if (isCP)
                     speed = (int) (CPSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1) * fps);
-                else
+                else if (isPH)
                     speed = (int) (PHSpeedDetector.predict(x1, y1, x2, y2) * speedCoeff / (frameNum2 - frameNum1) * fps);
+                else if (isRL)
+                    speed = (int) (RLSpeedDetector.predict(x1, y1, x2, y2, frameNum2 - frameNum1) * speedCoeff * fps);
 
                 canvas.drawText(
                         "Speed: " + speed,
@@ -1249,9 +1265,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             Mat frame2 = new Mat();
                             Utils.bitmapToMat(image2.getBitmapInternal(), frame2);
                             Canvas canvas = surfaceView.getHolder().lockCanvas();
-                            if (isPH)
+                            if (isRL) {
+                                int offsetX = (int) surfaceView.getX() - circle1.getWidth() / 2;
+                                int offsetY = (int) surfaceView.getY() - circle1.getHeight() / 2;
+                                RLSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                                graphicOverlay.roadLine.drawRoadLines(canvas, offsetX, offsetY);
+                            } else if (isPH)
                                 PHSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
-                            if (isCP)
+                            else if (isCP)
                                 CPSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
                             else if (isTOF)
                                 tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
@@ -1288,9 +1309,14 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             Mat frame2 = new Mat();
                             Utils.bitmapToMat(image2.getBitmapInternal(), frame2);
                             Canvas canvas = surfaceView.getHolder().lockCanvas();
-                            if (isPH)
+                            if (isRL) {
+                                int offsetX = (int) surfaceView.getX() - circle1.getWidth() / 2;
+                                int offsetY = (int) surfaceView.getY() - circle1.getHeight() / 2;
+                                RLSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
+                                graphicOverlay.roadLine.drawRoadLines(canvas, offsetX, offsetY);
+                            } else if (isPH)
                                 PHSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
-                            if (isCP)
+                            else if (isCP)
                                 CPSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
                             else if (isTOF)
                                 tofSpeedDetector.detectSpeeds(frame2, detectedObjects, canvas);
@@ -1321,6 +1347,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
         imW = bitmap.getWidth();
         imH = bitmap.getHeight();
         CPSpeedDetector.setImSize(imW, imH);
+        RLSpeedDetector.setImSize(imW, imW);
     }
 
     public void saveCsv(View view) {
@@ -1415,7 +1442,9 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
 //                if (serverWithSpeed) {
                 findViewById(R.id.server_parameters).setVisibility(View.VISIBLE);
                 ((EditText) findViewById(R.id.coeff)).setOnEditorActionListener((v, actionId, event) -> {
-                    if (actionId == EditorInfo.IME_ACTION_DONE) {
+                    if (actionId == EditorInfo.IME_ACTION_DONE ||
+                            actionId == EditorInfo.IME_ACTION_NEXT ||
+                            actionId == EditorInfo.IME_ACTION_GO) {
                         // Handle the action (e.g., submit form or perform action)
                         speedCoeff = Float.parseFloat(((EditText) findViewById(R.id.coeff)).getText().toString());
                         return true; // return true if the action was handled
@@ -1439,6 +1468,7 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 isSide = ((RadioButton) findViewById(R.id.radioSide)).isChecked();
                 isCP = ((RadioButton) findViewById(R.id.radioIPSA)).isChecked();
                 isPH = ((RadioButton) findViewById(R.id.radioPH)).isChecked();
+                isRL = ((RadioButton) findViewById(R.id.radioRL)).isChecked();
 
                 if (isCP) {
 
@@ -1454,9 +1484,19 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                 }
                 if (isPH){
                     findViewById(R.id.PH_parameters).setVisibility(View.VISIBLE);
+
+                    ((EditText) findViewById(R.id.x0)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
+                    ((EditText) findViewById(R.id.y0)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
+                    ((EditText) findViewById(R.id.x1)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
+                    ((EditText) findViewById(R.id.y1)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
+                    ((EditText) findViewById(R.id.x2)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
+                    ((EditText) findViewById(R.id.y2)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
+                    ((EditText) findViewById(R.id.x3)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
+                    ((EditText) findViewById(R.id.y3)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
+                }
+                if (isPH || isRL) {
                     findViewById(R.id.showLines).setVisibility(View.VISIBLE);
                     findViewById(R.id.circlesR).setVisibility(View.VISIBLE);
-
                     ((EditText) findViewById(R.id.radius)).setOnEditorActionListener((v, actionId, event) -> {
                         if (actionId == EditorInfo.IME_ACTION_DONE ||
                                 actionId == EditorInfo.IME_ACTION_NEXT ||
@@ -1474,18 +1514,10 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
                             return true; // Return true if the action is handled
                         }
                         return false; // Return false to allow other actions
-                });
+                    });
 
-                    ((EditText) findViewById(R.id.x0)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
-                    ((EditText) findViewById(R.id.y0)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
-                    ((EditText) findViewById(R.id.x1)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
-                    ((EditText) findViewById(R.id.y1)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
-                    ((EditText) findViewById(R.id.x2)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
-                    ((EditText) findViewById(R.id.y2)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
-                    ((EditText) findViewById(R.id.x3)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
-                    ((EditText) findViewById(R.id.y3)).setOnEditorActionListener((v, actionId, event) -> onPHParameterEdit(actionId));
                 }
-                if (isCP | isPH)
+                if (isCP | isPH | isRL)
                 {
                     findViewById(R.id.pause).setVisibility(View.VISIBLE);
                     findViewById(R.id.resume).setVisibility(View.INVISIBLE);
@@ -1599,6 +1631,8 @@ public class MainActivity extends AppCompatActivity implements View.OnTouchListe
             CPSpeedDetector = new CPSpeedDetector();
 
             PHSpeedDetector = new PHSpeedDetector();
+
+            RLSpeedDetector = new RLSpeedDetector();
 
         } catch (IOException e) {
             throw new RuntimeException(e);
